@@ -1,0 +1,376 @@
+.activities-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  font-family: Arial, sans-serif;
+  background: #f4f7f8;
+  color: #102f3b;
+}
+
+.activities-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  min-height: 100vh;
+  background: #102f3b;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 14px;
+  box-sizing: border-box;
+}
+
+.activities-brand {
+  margin-bottom: 26px;
+}
+
+.activities-brand h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.activities-brand p {
+  color: #94b7c3;
+  font-size: 12px;
+}
+
+.activities-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.activities-nav-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #e8f1f3;
+  text-align: left;
+  padding: 13px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.activities-nav-item:hover:not(:disabled) {
+  background: #1b4653;
+}
+
+.activities-nav-item.active {
+  background: #245766;
+  color: white;
+  font-weight: 600;
+}
+
+.activities-nav-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.activities-pending {
+  font-size: 10px;
+  color: #b6c9ce;
+}
+
+.activities-sidebar-footer {
+  margin-top: auto;
+  padding-top: 24px;
+  color: #94b7c3;
+  font-size: 12px;
+}
+
+.activities-sidebar-footer small {
+  display: block;
+  margin-top: 6px;
+}
+
+.activities-main {
+  flex: 1;
+  min-width: 0;
+  padding: 30px 36px;
+}
+
+.activities-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.activities-header h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.activities-header p {
+  margin: 6px 0 0;
+  color: #68818b;
+}
+
+.activities-status {
+  background: #d9f3e9;
+  color: #08745d;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.activities-content {
+  background: white;
+  padding: 24px;
+  border: 1px solid #e3eaed;
+  border-radius: 12px;
+  max-width: 850px;
+}
+
+@media (max-width: 700px) {
+  .activities-layout {
+    flex-direction: column;
+  }
+
+  .activities-sidebar {
+    width: 100%;
+    min-height: auto;
+  }
+
+  .activities-main {
+    padding: 20px;
+  }
+
+  .activities-header {
+    flex-wrap: wrap;
+  }
+}
+
+
+/* Improved activity management layout */
+
+.activities-main {
+  padding: 40px 48px;
+  background: #f4f7f8;
+}
+
+.activities-header {
+  margin-bottom: 30px;
+}
+
+.activities-header h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #102f3b;
+}
+
+.activities-content {
+  max-width: 960px;
+  width: 100%;
+  padding: 36px;
+  background: #ffffff;
+  border: 1px solid #e3eaed;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(16, 47, 59, 0.04);
+}
+
+/* Form elements */
+
+.activities-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 650px;
+}
+
+.activities-content form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334b56;
+  margin-bottom: 7px;
+}
+
+.activities-content form input,
+.activities-content form select,
+.activities-content form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 1px solid #d4e0e4;
+  border-radius: 8px;
+  background: white;
+  color: #102f3b;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.activities-content form input:focus,
+.activities-content form select:focus,
+.activities-content form textarea:focus {
+  outline: none;
+  border-color: #087e70;
+  box-shadow: 0 0 0 3px rgba(8, 126, 112, 0.12);
+}
+
+.activities-content form button[type="submit"] {
+  width: 100%;
+  min-height: 46px;
+  background: #087e70;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.activities-content form button[type="submit"]:hover {
+  background: #06675c;
+}
+
+@media (max-width: 700px) {
+  .activities-main {
+    padding: 20px;
+  }
+
+  .activities-content {
+    padding: 20px;
+  }
+}
+
+
+/* Activity History */
+
+.activity-history {
+  width: 100%;
+}
+
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.history-heading h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: #102f3b;
+}
+
+.history-heading p {
+  margin: 0;
+  color: #68818b;
+  font-size: 14px;
+}
+
+.history-count {
+  padding: 8px 12px;
+  background: #e4f5f0;
+  color: #087e70;
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.history-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.history-filters input,
+.history-filters select {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #d4e0e4;
+  border-radius: 8px;
+  background: white;
+  color: #102f3b;
+  font-size: 14px;
+}
+
+.history-filters input {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  padding: 14px 12px;
+  background: #f4f7f8;
+  color: #526b75;
+  font-size: 13px;
+}
+
+.history-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e3eaed;
+  color: #243f49;
+  font-size: 14px;
+}
+
+.history-delete-btn {
+  background: #fff0f0;
+  color: #c0392b;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.history-delete-btn:hover {
+  background: #ffe0e0;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 40px !important;
+  color: #68818b !important;
+}
+
+@media (max-width: 700px) {
+  .history-filters {
+    flex-direction: column;
+  }
+
+  .history-heading {
+    flex-wrap: wrap;
+  }
+}
+
+/* Activity History action buttons */
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-edit-btn {
+  background: #e4f5f0;
+  color: #087e70;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.history-edit-btn:hover {
+  background: #c8e9df;
+}
