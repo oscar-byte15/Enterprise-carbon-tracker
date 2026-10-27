@@ -1,0 +1,46 @@
+
+{
+  "electricity": {
+    "Grid electricity": {
+      "factor": 0.4,
+      "unit": "kWh",
+      "source": "Demo factor - replace before production"
+    }
+  },
+  "heating": {
+    "Natural gas": {
+      "factor": 2.0,
+      "unit": "m³",
+      "source": "Demo factor - replace before production"
+    }
+  },
+  "transport": {
+    "Petrol": {
+      "factor": 2.3,
+      "unit": "L",
+      "source": "Demo factor - replace before production"
+    },
+    "Diesel": {
+      "factor": 2.7,
+      "unit": "L",
+      "source": "Demo factor - replace before production"
+    }
+  },
+  "waste": {
+    "Plastic": {
+      "factor": 1.5,
+      "unit": "kg",
+      "source": "Demo factor - replace before production"
+    },
+    "Organic": {
+      "factor": 0.5,
+      "unit": "kg",
+      "source": "Demo factor - replace before production"
+    },
+    "General": {
+      "factor": 1.0,
+      "unit": "kg",
+      "source": "Demo factor - replace before production"
+    }
+  }
+}
