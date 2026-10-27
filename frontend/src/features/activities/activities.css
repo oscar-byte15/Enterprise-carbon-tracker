@@ -240,3 +240,137 @@
     padding: 20px;
   }
 }
+
+
+/* Activity History */
+
+.activity-history {
+  width: 100%;
+}
+
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.history-heading h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+  color: #102f3b;
+}
+
+.history-heading p {
+  margin: 0;
+  color: #68818b;
+  font-size: 14px;
+}
+
+.history-count {
+  padding: 8px 12px;
+  background: #e4f5f0;
+  color: #087e70;
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.history-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.history-filters input,
+.history-filters select {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #d4e0e4;
+  border-radius: 8px;
+  background: white;
+  color: #102f3b;
+  font-size: 14px;
+}
+
+.history-filters input {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  padding: 14px 12px;
+  background: #f4f7f8;
+  color: #526b75;
+  font-size: 13px;
+}
+
+.history-table td {
+  padding: 16px 12px;
+  border-bottom: 1px solid #e3eaed;
+  color: #243f49;
+  font-size: 14px;
+}
+
+.history-delete-btn {
+  background: #fff0f0;
+  color: #c0392b;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.history-delete-btn:hover {
+  background: #ffe0e0;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 40px !important;
+  color: #68818b !important;
+}
+
+@media (max-width: 700px) {
+  .history-filters {
+    flex-direction: column;
+  }
+
+  .history-heading {
+    flex-wrap: wrap;
+  }
+}
+
+/* Activity History action buttons */
+
+.history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-edit-btn {
+  background: #e4f5f0;
+  color: #087e70;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.history-edit-btn:hover {
+  background: #c8e9df;
+}
