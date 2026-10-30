@@ -1,25 +1,25 @@
-
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ActivitiesSidebar from "./components/ActivitiesSidebar";
 import NewActivity from "./pages/NewActivity";
 import ActivityHistory from "./pages/ActivityHistory";
 import EditActivity from "./pages/EditActivity";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import EnterpriseProfile from "./pages/EnterpriseProfile";
+import Departments from "./pages/Departments";
+import { clearAuthSession } from "./services/authService";
 import "./activities.css";
 
 export default function ActivitiesLayout() {
-  // Current page displayed in the sidebar
-  const [activePage, setActivePage] = useState("new");
-
-  // Activity selected for editing
+  const [activePage, setActivePage] = useState("login");
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem("enterprise_token")));
 
-  // Open Edit Activity with selected record
   function handleEdit(activity) {
     setSelectedActivity(activity);
     setActivePage("edit");
   }
 
-  // Handle navigation from sidebar
   function handleNavigate(page) {
     if (page === "edit") {
       setSelectedActivity(null);
@@ -28,57 +28,79 @@ export default function ActivitiesLayout() {
     setActivePage(page);
   }
 
-  // Handle successful update
   function handleSaved() {
     setSelectedActivity(null);
     setActivePage("history");
   }
 
-  const pages = {
+  function handleAuthenticated(result) {
+    setIsAuthenticated(Boolean(result?.access_token));
+    setActivePage("enterprise");
+  }
+
+  function handleLogout() {
+    clearAuthSession();
+    setIsAuthenticated(false);
+    setActivePage("login");
+  }
+
+  const pages = useMemo(() => ({
+    login: {
+      title: "Login",
+      component: <Login onAuthenticated={handleAuthenticated} onNavigate={handleNavigate} />,
+    },
+    register: {
+      title: "Register",
+      component: <Register onAuthenticated={handleAuthenticated} onNavigate={handleNavigate} />,
+    },
+    enterprise: {
+      title: "Enterprise profile",
+      component: <EnterpriseProfile onNavigate={handleNavigate} />,
+    },
+    departments: {
+      title: "Departments",
+      component: <Departments onNavigate={handleNavigate} />,
+    },
     new: {
       title: "New carbon activity",
       component: <NewActivity />,
     },
-
     history: {
       title: "Activity history",
       component: <ActivityHistory onEdit={handleEdit} />,
     },
-
     edit: {
       title: "Edit activity",
-      component: (
-        <EditActivity
-          activity={selectedActivity}
-          onSaved={handleSaved}
-        />
-      ),
+      component: <EditActivity activity={selectedActivity} onSaved={handleSaved} />,
     },
-  };
+  }), [selectedActivity]);
 
-  const currentPage = pages[activePage];
+  const currentPage = pages[activePage] || pages.login;
 
   return (
     <div className="activities-layout">
-      {/* Sidebar */}
       <ActivitiesSidebar
         activePage={activePage}
         onNavigate={handleNavigate}
+        isAuthenticated={isAuthenticated}
+        onLogout={handleLogout}
       />
 
-      {/* Main content */}
       <main className="activities-main">
         <header className="activities-header">
           <div>
             <h1>{currentPage.title}</h1>
             <p>
-              Subsystem 2 · Carbon Activity Management
+              Subsystem 1 · Authentication & Enterprise Management
             </p>
           </div>
 
-          <span className="activities-status">
-            DEVELOPMENT
-          </span>
+          <div className="activities-header-actions">
+            {isAuthenticated ? (
+              <button type="button" className="logout-button" onClick={handleLogout}>Log out</button>
+            ) : null}
+            <span className="activities-status">{isAuthenticated ? "SIGNED IN" : "AUTH REQUIRED"}</span>
+          </div>
         </header>
 
         <section className="activities-content">
