@@ -1,10 +1,9 @@
 
 import ActivityForm from "../components/ActivityForm";
-import { updateActivity } from "../services/activityStorage";
+import { updateActivity } from "../services/activityService";
 
 export default function EditActivity({ activity, onSaved }) {
-
-  // Show message when no activity has been selected
+  // Show message when no activity is selected
   if (!activity) {
     return (
       <div>
@@ -17,21 +16,12 @@ export default function EditActivity({ activity, onSaved }) {
     );
   }
 
-  // Update existing activity
-  function handleUpdate(updatedData) {
-    try {
-      updateActivity(activity.id, updatedData);
+  // UPDATE activity using FastAPI
+  async function handleUpdate(updatedData) {
+    await updateActivity(activity.id, updatedData);
 
-      alert("Activity updated successfully!");
-
-      // Return to Activity History
-      if (onSaved) {
-        onSaved();
-      }
-
-    } catch (error) {
-      alert(`Unable to update activity: ${error.message}`);
-    }
+    // Navigate back to Activity History
+    onSaved?.();
   }
 
   return (

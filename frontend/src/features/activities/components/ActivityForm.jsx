@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { saveActivity } from "../services/activityStorage";
+import { createActivity } from "../services/activityService";
 
 // Available activity types by category
 const activityTypes = {
@@ -40,17 +40,22 @@ export default function ActivityForm({
     initialData?.date || ""
   );
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   // Update category and reset activity type
   function handleCategoryChange(event) {
     const selectedCategory = event.target.value;
 
     setCategory(selectedCategory);
     setType(activityTypes[selectedCategory][0]);
+    setError("");
   }
 
-  // Handle Create and Update operations
-  function handleSubmit(event) {
+  // Handle CREATE and UPDATE operations
+  async function handleSubmit(event) {
     event.preventDefault();
+    setError("");
 
     // Validate amount and date
     if (
@@ -59,7 +64,7 @@ export default function ActivityForm({
       !Number.isFinite(Number(amount)) ||
       Number(amount) <= 0
     ) {
-      alert("Please enter a valid amount and date.");
+      setError("Please enter a valid amount and date.");
       return;
     }
 
@@ -73,29 +78,39 @@ export default function ActivityForm({
       period: date.slice(0, 7),
     };
 
-    if (mode === "edit") {
-      // Edit mode: parent updates the existing activity
-      if (onSubmit) {
-        onSubmit(activity);
-      }
-    } else {
-      // Create mode: save a new activity
-      try {
-        const savedActivity = saveActivity(activity);
+    setLoading(true);
 
-        // Notify parent if callback exists
-        if (onSubmit) {
-          onSubmit(savedActivity);
+    try {
+      if (mode === "edit") {
+        // UPDATE is handled by EditActivity.jsx
+        if (!onSubmit) {
+          throw new Error("Update handler is missing");
         }
 
-        alert("Activity saved successfully!");
+        await onSubmit(activity);
+      } else {
+        // CREATE using FastAPI
+        const savedActivity = await createActivity(activity);
 
-        // Clear input fields after saving
+        // Notify parent component
+        await onSubmit?.(savedActivity);
+
+        // Clear input fields
         setAmount("");
         setDate("");
-      } catch (error) {
-        alert(`Unable to save activity: ${error.message}`);
       }
+
+      alert(
+        mode === "edit"
+          ? "Activity updated successfully!"
+          : "Activity saved successfully!"
+      );
+    } catch (err) {
+      setError(
+        err.message || "Unable to process carbon activity."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -115,11 +130,13 @@ export default function ActivityForm({
           id="category"
           value={category}
           onChange={handleCategoryChange}
+          disabled={loading}
           required
         >
           {Object.keys(activityTypes).map((item) => (
             <option key={item} value={item}>
-              {item.charAt(0).toUpperCase() + item.slice(1)}
+              {item.charAt(0).toUpperCase() +
+                item.slice(1)}
             </option>
           ))}
         </select>
@@ -133,6 +150,7 @@ export default function ActivityForm({
           id="type"
           value={type}
           onChange={(event) => setType(event.target.value)}
+          disabled={loading}
           required
         >
           {activityTypes[category].map((item) => (
@@ -158,6 +176,7 @@ export default function ActivityForm({
           value={amount}
           onChange={(event) => setAmount(event.target.value)}
           placeholder={`Enter amount in ${units[category]}`}
+          disabled={loading}
         />
       </div>
 
@@ -171,12 +190,24 @@ export default function ActivityForm({
           required
           value={date}
           onChange={(event) => setDate(event.target.value)}
+          disabled={loading}
         />
       </div>
 
-      {/* Submit button */}
-      <button type="submit">
-        {mode === "edit" ? "Save Changes" : "Save Activity"}
+      {/* Error message */}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      {/* Submit */}
+      <button type="submit" disabled={loading}>
+        {loading
+          ? "Processing..."
+          : mode === "edit"
+            ? "Save Changes"
+            : "Save Activity"}
       </button>
     </form>
   );
