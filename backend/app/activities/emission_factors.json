@@ -2,45 +2,79 @@
 {
   "electricity": {
     "Grid electricity": {
-      "factor": 0.4,
+      "factor": 0.352,
       "unit": "kWh",
-      "source": "Demo factor - replace before production"
+      "source": "Umweltbundesamt (UBA), Climate Change 16/2026",
+      "source_url": "https://www.umweltbundesamt.de/system/files/medien/11850/publikationen/2026-03/16_2026_CC.pdf",
+      "year": 2025,
+      "region": "Germany",
+      "methodology": "GHG emissions without upstream emissions"
     }
   },
   "heating": {
     "Natural gas": {
-      "factor": 2.0,
-      "unit": "m³",
-      "source": "Demo factor - replace before production"
+      "factor": 0.18296,
+      "unit": "kWh",
+      "source": "UK DESNZ GHG Conversion Factors 2025",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025",
+      "year": 2025,
+      "region": "United Kingdom",
+      "methodology": "Natural gas combustion, gross calorific value, direct emissions"
     }
   },
   "transport": {
     "Petrol": {
-      "factor": 2.3,
+      "factor": 2.06916,
       "unit": "L",
-      "source": "Demo factor - replace before production"
+      "source": "UK DESNZ GHG Conversion Factors 2025",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025",
+      "year": 2025,
+      "region": "United Kingdom",
+      "methodology": "Average petrol biofuel blend, direct emissions"
     },
     "Diesel": {
-      "factor": 2.7,
+      "factor": 2.57082,
       "unit": "L",
-      "source": "Demo factor - replace before production"
+      "source": "UK DESNZ GHG Conversion Factors 2025",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025",
+      "year": 2025,
+      "region": "United Kingdom",
+      "methodology": "Average diesel biofuel blend, direct emissions"
     }
   },
   "waste": {
-    "Plastic": {
-      "factor": 1.5,
+    "Plastic - Recycling": {
+      "factor": 0.00465358,
       "unit": "kg",
-      "source": "Demo factor - replace before production"
+      "source": "UK DESNZ GHG Conversion Factors 2026",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2026",
+      "year": 2026,
+      "region": "United Kingdom",
+      "material": "PET plastic",
+      "treatment_method": "Closed-loop recycling",
+      "methodology": "Scope 3 waste disposal"
     },
-    "Organic": {
-      "factor": 0.5,
+    "Organic - Composting": {
+      "factor": 0.00900687,
       "unit": "kg",
-      "source": "Demo factor - replace before production"
+      "source": "UK DESNZ GHG Conversion Factors 2026",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2026",
+      "year": 2026,
+      "region": "United Kingdom",
+      "material": "Mixed food and garden waste",
+      "treatment_method": "Composting",
+      "methodology": "Scope 3 waste disposal"
     },
-    "General": {
-      "factor": 1.0,
+    "General - Landfill": {
+      "factor": 0.49729,
       "unit": "kg",
-      "source": "Demo factor - replace before production"
+      "source": "UK DESNZ GHG Conversion Factors 2026",
+      "source_url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2026",
+      "year": 2026,
+      "region": "United Kingdom",
+      "material": "Household residual waste",
+      "treatment_method": "Landfill",
+      "methodology": "Scope 3 waste disposal"
     }
   }
 }
