@@ -1,10 +1,12 @@
 
+import { getAuthHeaders } from "./authService";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const ACTIVITIES_URL = `${API_BASE_URL}/activities`;
 
-// Handle HTTP response
+// Handle HTTP responses
 async function handleResponse(response) {
   if (response.status === 204) {
     return null;
@@ -30,9 +32,9 @@ async function handleResponse(response) {
 export async function createActivity(activity) {
   const response = await fetch(`${ACTIVITIES_URL}/`, {
     method: "POST",
-    headers: {
+    headers: getAuthHeaders({
       "Content-Type": "application/json",
-    },
+    }),
     body: JSON.stringify(activity),
   });
 
@@ -44,6 +46,7 @@ export async function createActivity(activity) {
 export async function getActivities() {
   const response = await fetch(`${ACTIVITIES_URL}/`, {
     method: "GET",
+    headers: getAuthHeaders(),
   });
 
   return handleResponse(response);
@@ -53,7 +56,10 @@ export async function getActivities() {
 export async function getActivityById(id) {
   const response = await fetch(
     `${ACTIVITIES_URL}/${encodeURIComponent(id)}`,
-    { method: "GET" }
+    {
+      method: "GET",
+      headers: getAuthHeaders(),
+    }
   );
 
   return handleResponse(response);
@@ -65,9 +71,9 @@ export async function updateActivity(id, activity) {
     `${ACTIVITIES_URL}/${encodeURIComponent(id)}`,
     {
       method: "PUT",
-      headers: {
+      headers: getAuthHeaders({
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify(activity),
     }
   );
@@ -80,7 +86,10 @@ export async function updateActivity(id, activity) {
 export async function deleteActivity(id) {
   const response = await fetch(
     `${ACTIVITIES_URL}/${encodeURIComponent(id)}`,
-    { method: "DELETE" }
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    }
   );
 
   return handleResponse(response);

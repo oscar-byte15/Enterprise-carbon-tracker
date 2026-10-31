@@ -3,20 +3,25 @@ import { useState } from "react";
 import { createActivity } from "../services/activityService";
 
 // Available activity types by category
+
 const activityTypes = {
   electricity: ["Grid electricity"],
   heating: ["Natural gas"],
   transport: ["Petrol", "Diesel"],
-  waste: ["Plastic", "Organic", "General"],
+  waste: [
+    "Plastic - Recycling",
+    "Organic - Composting",
+    "General - Landfill",
+  ],
 };
 
-// Measurement units by category
 const units = {
   electricity: "kWh",
-  heating: "m³",
+  heating: "kWh",
   transport: "L",
   waste: "kg",
 };
+
 
 export default function ActivityForm({
   onSubmit,

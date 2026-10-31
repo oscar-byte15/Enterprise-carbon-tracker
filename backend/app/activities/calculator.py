@@ -61,8 +61,15 @@ def calculate_emissions(category, activity_type, amount, unit):
     )
 
     # 8. Return calculation result
+
     return {
-        "emission_factor": float(emission_factor),
-        "factor_source": factor_data["source"],
-        "co2e_kg": float(emissions)
+    "emission_factor": float(emission_factor),
+    "factor_source": factor_data["source"],
+    "factor_source_url": factor_data.get("source_url"),
+    "factor_year": factor_data.get("year"),
+    "factor_region": factor_data.get("region"),
+    "factor_methodology": factor_data.get("methodology"),
+    "treatment_method": factor_data.get("treatment_method"),
+    "co2e_kg": float(emissions)
     }
+
