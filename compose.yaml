@@ -1,3 +1,4 @@
+
 services:
   mongodb:
     image: mongo:8.0
@@ -17,10 +18,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: runtime
+
     restart: unless-stopped
+
     depends_on:
       mongodb:
         condition: service_healthy
+
     environment:
       MONGODB_URI: mongodb://mongodb:27017
       MONGODB_DB: enterprise_carbon_tracker
@@ -29,6 +34,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+
     ports:
       - "127.0.0.1:8000:8000"
 
@@ -36,11 +42,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+
     restart: unless-stopped
+
     depends_on:
       - backend
+
     environment:
       VITE_API_URL: http://localhost:8000
+
     ports:
       - "127.0.0.1:5173:5173"
 
