@@ -1,4 +1,5 @@
 const menuItems = [
+  { id: "dashboard", label: "Dashboard" },
   { id: "login", label: "Login" },
   { id: "register", label: "Register & onboarding" },
   { id: "enterprise", label: "Enterprise profile" },
