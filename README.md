@@ -135,3 +135,73 @@ docker run --rm carbon-tracker-tests
 ```
 
 This ensures Docker runs the latest tests.
+---
+
+## Hometask 1 — Object-Oriented Concepts
+
+This assignment translates the team's Capstone subsystem architecture into Python OOP classes. **Submission branch:** `Homeassignment1`.
+
+### Team Overview
+
+| Team member | Assigned subsystem | Implementation |
+|---|---|---|
+| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes, UML and unit tests](docs/Hometask1-Subsystem2.md) |
+| Other team members | To be completed by the team | Add each member's subsystem and three classes before submission |
+
+### System Design — UML Diagrams
+
+Subsystem 2's rendered Mermaid class diagram, class descriptions and instructions are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
+
+```mermaid
+classDiagram
+    class ActivityRecord {
+        -str _category
+        -str _activity_type
+        -Decimal _amount
+        -str _unit
+        -date _date
+        -str _enterprise_id
+        +get_amount() float
+        +set_amount(value)
+        +get_period() str
+    }
+    class EmissionFactor {
+        -str _category
+        -str _activity_type
+        -Decimal _factor
+        -str _unit
+        -str _source
+        +matches(activity) bool
+        +get_factor() float
+        +set_factor(value)
+    }
+    class CalculationService {
+        -dict _factor_catalog
+        +initialize_factors()
+        +get_factor_catalog() dict
+        +set_factor_catalog(catalog)
+        +validate_units(activity, factor)
+        +calculate(activity) dict
+    }
+    CalculationService ..> ActivityRecord : processes
+    CalculationService ..> EmissionFactor : uses
+    EmissionFactor ..> ActivityRecord : matches
+```
+
+**Team note:** Add UML diagrams for Subsystems 1, 3, and 4 when their owners finish implementing their three classes.
+
+### Team Video Presentation (3–5 minutes)
+
+**Video link:** Pending team recording — replace this placeholder with the direct YouTube, Loom or Google Drive link before submission.
+
+All four team members should explain their own classes and how they correspond to their subsystem's UML architecture.
+
+### Running Hometask 1 Tests
+
+```bash
+cd backend
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_oop_hometask1.py -v
+```
+
+These new tests are in addition to the existing Subsystem 2 unit tests. Their execution is not yet verified in this branch.
