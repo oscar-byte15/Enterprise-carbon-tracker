@@ -35,3 +35,18 @@ export async function getAnalyticsSummary(period = null) {
 
   return handleResponse(response);
 }
+
+/**
+ * Fetch month-over-month carbon emission trends for the authenticated enterprise.
+ * @param {number|string|null} year - Optional 4-digit calendar year filter (e.g. 2026).
+ */
+export async function getAnalyticsTrends(year = null) {
+  const query = year ? `?year=${encodeURIComponent(year)}` : "";
+  const response = await fetch(`${ANALYTICS_URL}/trends${query}`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  return handleResponse(response);
+}
+

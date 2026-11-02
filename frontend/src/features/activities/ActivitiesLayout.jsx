@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import ActivitiesSidebar from "./components/ActivitiesSidebar";
 import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
 import NewActivity from "./pages/NewActivity";
 import ActivityHistory from "./pages/ActivityHistory";
 import EditActivity from "./pages/EditActivity";
@@ -50,6 +51,11 @@ export default function ActivitiesLayout() {
       title: "Executive Dashboard",
       subtitle: "Subsystem 3 · Analytics Dashboard & Performance Tracking",
       component: <Dashboard onNavigate={handleNavigate} />,
+    },
+    analytics: {
+      title: "Emissions Analytics & Trends",
+      subtitle: "Subsystem 3 · Visual Trend Analysis & Category Distribution",
+      component: <Analytics onNavigate={handleNavigate} />,
     },
     login: {
       title: "Login",
