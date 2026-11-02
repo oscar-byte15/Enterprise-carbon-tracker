@@ -63,3 +63,26 @@ def test_service_custom_catalog_and_encapsulation():
     catalog = service.get_factor_catalog()
     catalog["electricity"]["Grid electricity"]["factor"] = 99
     assert service.calculate(make_activity())["co2e_kg"] == 5.0
+
+
+def test_service_returns_existing_frontend_and_repository_metadata():
+    result = CalculationService().calculate(make_activity())
+    assert result["period"] == "2026-11"
+    assert result["co2e_kg"] == 3.52
+    assert result["factor_source"]
+    assert "factor_source_url" in result
+    assert "factor_year" in result
+    assert "factor_region" in result
+    assert "factor_methodology" in result
+    assert "treatment_method" in result
+
+
+def test_transport_and_waste_calculations():
+    service = CalculationService()
+    for category, activity_type, unit in [
+        ("transport", "Diesel", "L"),
+        ("waste", "General - Landfill", "kg"),
+    ]:
+        activity = ActivityRecord(category, activity_type, 5, unit,
+                                  date(2026, 11, 2), "enterprise-1")
+        assert service.calculate(activity)["co2e_kg"] >= 0
