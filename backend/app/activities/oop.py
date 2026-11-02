@@ -1,7 +1,7 @@
 """Hometask 1: OOP implementation of Subsystem 2.
 
-Independent domain objects that reuse the production emissions catalog.
-The existing FastAPI routes and MongoDB repository remain unchanged.
+Domain objects used by the FastAPI activity create/update pipeline.
+The existing API response fields and MongoDB repository are preserved.
 """
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
@@ -181,13 +181,19 @@ class CalculationService:
         factor = self.get_emission_factor(activity.get_category(),
                                           activity.get_activity_type())
         self.validate_units(activity, factor)
-        amount = Decimal(str(activity.get_amount()))
+        amount = activity._amount  # Decimal retained to avoid float precision loss
         result = (amount * factor._factor).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
+        factor_data = self._factor_catalog[activity.get_category()][activity.get_activity_type()]
         return {
             "co2e_kg": float(result),
             "emission_factor": factor.get_factor(),
             "factor_source": factor.get_source(),
+            "factor_source_url": factor_data.get("source_url"),
+            "factor_year": factor_data.get("year"),
+            "factor_region": factor_data.get("region"),
+            "factor_methodology": factor_data.get("methodology"),
+            "treatment_method": factor_data.get("treatment_method"),
             "period": activity.get_period(),
         }
