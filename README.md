@@ -150,7 +150,7 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 
 ### System Design — UML Diagrams
 
-Subsystem 2's rendered Mermaid class diagram, class descriptions and instructions are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
+The composition (◆) indicates CalculationService owns zero or more EmissionFactor objects; there is no aggregation between the three classes. ActivityRecord is supplied to a calculation, rather than owned. Full design details are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
 
 ```mermaid
 classDiagram
@@ -177,14 +177,16 @@ classDiagram
     }
     class CalculationService {
         -dict _factor_catalog
+        -dict _factors
         +initialize_factors()
         +get_factor_catalog() dict
         +set_factor_catalog(catalog)
+        +get_emission_factor(category, type) EmissionFactor
         +validate_units(activity, factor)
         +calculate(activity) dict
     }
-    CalculationService ..> ActivityRecord : processes
-    CalculationService ..> EmissionFactor : uses
+    CalculationService "1" *-- "0..*" EmissionFactor : owns
+    CalculationService ..> ActivityRecord : calculates for
     EmissionFactor ..> ActivityRecord : matches
 ```
 
