@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from app.dependencies import get_current_enterprise_id
 
 from .schemas import ActivityCreate
-from .calculator import calculate_emissions
+from .oop import ActivityRecord, CalculationService
 from .mongo_repository import activity_repository
 
 
@@ -15,14 +15,17 @@ router = APIRouter(
 
 
 # Prepare activity data and calculate CO2 emissions
-def prepare_activity(activity: ActivityCreate) -> dict:
+def prepare_activity(activity: ActivityCreate, enterprise_id: str) -> dict:
     try:
-        calculation = calculate_emissions(
+        record = ActivityRecord(
             category=activity.category,
             activity_type=activity.type,
             amount=activity.amount,
-            unit=activity.unit
+            unit=activity.unit,
+            activity_date=activity.date,
+            enterprise_id=enterprise_id,
         )
+        calculation = CalculationService().calculate(record)
     except ValueError as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -31,7 +34,7 @@ def prepare_activity(activity: ActivityCreate) -> dict:
 
     return {
         **activity.model_dump(mode="json"),
-        "period": activity.date.strftime("%Y-%m"),
+        "period": record.get_period(),
         **calculation
     }
 
@@ -42,7 +45,7 @@ def create_activity(
     activity: ActivityCreate,
     enterprise_id: str = Depends(get_current_enterprise_id)
 ):
-    record = prepare_activity(activity)
+    record = prepare_activity(activity, enterprise_id)
 
     saved = activity_repository.create(
         record,
@@ -90,7 +93,7 @@ def update_activity(
     activity: ActivityCreate,
     enterprise_id: str = Depends(get_current_enterprise_id)
 ):
-    record = prepare_activity(activity)
+    record = prepare_activity(activity, enterprise_id)
 
     updated = activity_repository.update(
         activity_id,

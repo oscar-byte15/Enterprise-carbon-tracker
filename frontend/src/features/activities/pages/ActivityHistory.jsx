@@ -4,6 +4,7 @@ import {
   getActivities,
   deleteActivity,
 } from "../services/activityService";
+import "./ActivityHistory.css";
 
 export default function ActivityHistory({ onEdit }) {
   const [activities, setActivities] = useState([]);
@@ -11,8 +12,9 @@ export default function ActivityHistory({ onEdit }) {
   const [category, setCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
-  // READ - Load activities from FastAPI
+  // Load activities from FastAPI
   useEffect(() => {
     let active = true;
 
@@ -46,7 +48,7 @@ export default function ActivityHistory({ onEdit }) {
     };
   }, []);
 
-  // DELETE - Remove activity using FastAPI
+  // Delete from FastAPI and update local state
   async function handleDelete(id) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this activity?"
@@ -55,92 +57,143 @@ export default function ActivityHistory({ onEdit }) {
     if (!confirmed) return;
 
     try {
+      setDeletingId(id);
       setError("");
 
       await deleteActivity(id);
 
-      // Update displayed list
       setActivities((previous) =>
-        previous.filter(
-          (activity) => activity.id !== id
-        )
+        previous.filter((activity) => activity.id !== id)
       );
     } catch (err) {
       setError(
         err.message || "Unable to delete activity."
       );
+    } finally {
+      setDeletingId(null);
     }
   }
 
-  // Filter activities by type and category
-  const filteredActivities = activities.filter(
-    (activity) => {
-      const matchesSearch = String(
-        activity.type || ""
-      )
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  // Search and category filtering
+  const filteredActivities = activities.filter((activity) => {
+    const query = search.toLowerCase().trim();
 
-      const matchesCategory =
-        category === "all" ||
-        activity.category === category;
+    const matchesSearch = [
+      activity.type,
+      activity.category,
+      activity.date,
+    ].some((value) =>
+      String(value || "").toLowerCase().includes(query)
+    );
 
-      return matchesSearch && matchesCategory;
-    }
-  );
+    const matchesCategory =
+      category === "all" ||
+      activity.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  const formatCategory = (value) =>
+    value
+      ? value.charAt(0).toUpperCase() + value.slice(1)
+      : "Unknown";
 
   return (
     <div className="activity-history">
       <div className="history-heading">
-        <div>
+        <div className="history-title-group">
+          <div className="history-eyebrow">
+            CARBON ACTIVITY MANAGEMENT
+          </div>
           <h2>Activity Records</h2>
           <p>
-            Review and manage registered carbon activities.
+            Track, search and manage your enterprise
+            carbon activities in one place.
           </p>
         </div>
 
-        <span className="history-count">
-          {activities.length} activities
+        <div className="history-stat">
+          <span className="history-stat-number">
+            {activities.length}
+          </span>
+          <span className="history-stat-label">
+            Total activities
+          </span>
+        </div>
+      </div>
+
+      <div className="history-toolbar">
+        <div className="history-search">
+          <span
+            className="history-search-icon"
+            aria-hidden="true"
+          >
+            ⌕
+          </span>
+          <input
+            type="search"
+            aria-label="Search activities"
+            placeholder="Search by activity, category or date..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+          />
+        </div>
+
+        <div className="history-select-wrapper">
+          <label htmlFor="history-category">
+            Category
+          </label>
+          <select
+            id="history-category"
+            value={category}
+            onChange={(event) =>
+              setCategory(event.target.value)
+            }
+          >
+            <option value="all">All categories</option>
+            <option value="electricity">Electricity</option>
+            <option value="heating">Heating</option>
+            <option value="transport">Transport</option>
+            <option value="waste">Waste</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="history-results">
+        <span>
+          Showing{" "}
+          <strong>{filteredActivities.length}</strong>{" "}
+          of <strong>{activities.length}</strong>{" "}
+          activities
         </span>
+
+        {(search || category !== "all") && (
+          <button
+            type="button"
+            className="history-clear-btn"
+            onClick={() => {
+              setSearch("");
+              setCategory("all");
+            }}
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
-      {/* Search and category filters */}
-      <div className="history-filters">
-        <input
-          type="search"
-          placeholder="Search activity type..."
-          value={search}
-          onChange={(event) =>
-            setSearch(event.target.value)
-          }
-        />
-
-        <select
-          value={category}
-          onChange={(event) =>
-            setCategory(event.target.value)
-          }
-        >
-          <option value="all">All categories</option>
-          <option value="electricity">
-            Electricity
-          </option>
-          <option value="heating">Heating</option>
-          <option value="transport">Transport</option>
-          <option value="waste">Waste</option>
-        </select>
-      </div>
-
-      {/* Error message */}
       {error && (
-        <p className="form-error" role="alert">
+        <div className="history-error" role="alert">
           {error}
-        </p>
+        </div>
       )}
 
-      {/* Loading */}
       {loading ? (
-        <p>Loading activities...</p>
+        <div className="history-loading" role="status">
+          <div className="history-spinner" />
+          <p>Loading your activities...</p>
+        </div>
       ) : (
         <div className="history-table-wrapper">
           <table className="history-table">
@@ -150,6 +203,7 @@ export default function ActivityHistory({ onEdit }) {
                 <th>Category</th>
                 <th>Activity Type</th>
                 <th>Amount</th>
+                <th>CO₂e</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -157,17 +211,47 @@ export default function ActivityHistory({ onEdit }) {
             <tbody>
               {filteredActivities.map((activity) => (
                 <tr key={activity.id}>
-                  <td>{activity.date || "—"}</td>
-
-                  <td>
-                    {activity.category || "—"}
+                  <td className="history-date">
+                    {activity.date || "—"}
                   </td>
 
-                  <td>{activity.type || "—"}</td>
-
                   <td>
-                    {activity.amount ?? "—"}{" "}
-                    {activity.unit || ""}
+                    <span
+                      className={
+                        `history-category-badge ${
+                          activity.category || ""
+                        }`
+                      }
+                    >
+                      <span className="badge-dot" />
+                      {formatCategory(activity.category)}
+                    </span>
+                  </td>
+
+                  <td className="history-activity-type">
+                    {activity.type || "—"}
+                  </td>
+
+                  <td className="history-amount">
+                    <strong>
+                      {activity.amount ?? "—"}
+                    </strong>{" "}
+                    <span>{activity.unit || ""}</span>
+                  </td>
+
+                  <td className="history-emissions">
+                    {activity.co2e_kg != null ? (
+                      <>
+                        <strong>
+                          {Number(
+                            activity.co2e_kg
+                          ).toFixed(2)}
+                        </strong>
+                        <span> kg CO₂e</span>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </td>
 
                   <td>
@@ -183,11 +267,14 @@ export default function ActivityHistory({ onEdit }) {
                       <button
                         type="button"
                         className="history-delete-btn"
+                        disabled={deletingId !== null}
                         onClick={() =>
                           handleDelete(activity.id)
                         }
                       >
-                        Delete
+                        {deletingId === activity.id
+                          ? "Deleting..."
+                          : "Delete"}
                       </button>
                     </div>
                   </td>
@@ -197,10 +284,20 @@ export default function ActivityHistory({ onEdit }) {
               {filteredActivities.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="history-empty"
                   >
-                    No activities found.
+                    <div className="history-empty-content">
+                      <span className="history-empty-icon">
+                        ◫
+                      </span>
+                      <h3>No activities found</h3>
+                      <p>
+                        {activities.length === 0
+                          ? "Your registered carbon activities will appear here."
+                          : "Try adjusting your search or category filter."}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -208,6 +305,15 @@ export default function ActivityHistory({ onEdit }) {
           </table>
         </div>
       )}
+
+      <div className="history-footer">
+        <span>
+          Enterprise Carbon Tracker
+        </span>
+        <span>
+          Activity Management · Subsystem 2
+        </span>
+      </div>
     </div>
   );
 }
