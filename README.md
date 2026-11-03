@@ -146,9 +146,12 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 | Team member | Assigned subsystem | Implementation |
 |---|---|---|
 | Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes, UML and unit tests](docs/Hometask1-Subsystem2.md) |
-| Other team members | To be completed by the team | Add each member's subsystem and three classes before submission |
+| Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
+| Other team members | Subsystems 1 & 4 | Add each member's subsystem and three classes before submission |
 
 ### System Design — UML Diagrams
+
+#### Subsystem 2 — Carbon Activity Management & Calculation Engine
 
 The composition (◆) indicates CalculationService owns zero or more EmissionFactor objects; there is no aggregation between the three classes. ActivityRecord is supplied to a calculation, rather than owned. Full design details are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
 
@@ -190,7 +193,74 @@ classDiagram
     EmissionFactor ..> ActivityRecord : matches
 ```
 
-**Team note:** Add UML diagrams for Subsystems 1, 3, and 4 when their owners finish implementing their three classes.
+#### Subsystem 3 — Analytics Dashboard & AI Advisory
+
+The composition (◆) models AnalyticsEngine creating, managing, and owning multiple EmissionMetric instances. SustainabilityAdvisor exhibits a dependency (..>) on AnalyticsEngine, analyzing enterprise metrics without retaining ownership.
+
+```mermaid
+classDiagram
+    class EmissionMetric {
+        -str _category
+        -Decimal _co2e_kg
+        -Decimal _percentage
+        -int _activity_count
+        +get_category() str
+        +set_category(value)
+        +get_co2e_kg() float
+        +set_co2e_kg(value)
+        +get_percentage() float
+        +set_percentage(value)
+        +get_activity_count() int
+        +set_activity_count(value)
+        +to_dict() dict
+    }
+    class AnalyticsEngine {
+        -str _enterprise_id
+        -dict _metrics
+        -Decimal _total_co2e_kg
+        +initialize_metrics()
+        +get_enterprise_id() str
+        +set_enterprise_id(value)
+        +get_total_co2e_kg() float
+        +get_metrics() dict
+        +set_metrics(metrics)
+        +add_metric(category, co2e_kg, count)
+        +recalculate_percentages()
+        +get_top_category() str
+        +generate_summary() dict
+    }
+    class SustainabilityAdvisor {
+        -str _advisor_mode
+        -dict _catalog
+        +initialize_catalog()
+        +get_advisor_mode() str
+        +set_advisor_mode(mode)
+        +get_catalog() dict
+        +set_catalog(catalog)
+        +generate_recommendations(analytics) list
+    }
+    AnalyticsEngine "1" *-- "0..*" EmissionMetric : owns
+    SustainabilityAdvisor ..> AnalyticsEngine : analyzes
+```
+
+**Team note:** Add UML diagrams for Subsystems 1 and 4 when their owners finish implementing their three classes.
+
+### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
+
+The Subsystem 3 OOP implementation is located in `backend/app/analytics/oop.py`.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Relationships |
+|---|---|---|---|
+| `EmissionMetric` | Encapsulates an aggregated carbon metric for a category, tracking emissions, share percentage, and activity count | `__init__(category, co2e_kg, percentage=0.0, activity_count=0)` | Private attributes with setters enforcing range and numeric constraints; `to_dict()` for dashboard serialization |
+| `AnalyticsEngine` | Aggregates enterprise activity records, calculates total emissions, computes category percentages, and detects the top carbon driver | `__init__(enterprise_id, raw_activities=None)` | **Composition:** `AnalyticsEngine "1" *-- "0..*" EmissionMetric : owns`. Defensive copies returned from `get_metrics()` |
+| `SustainabilityAdvisor` | Evaluates enterprise analytics to produce prioritized, actionable carbon mitigation recommendations (High/Medium/Low) | `__init__(advisor_mode="rules", catalog=None)` | **Dependency:** `SustainabilityAdvisor ..> AnalyticsEngine : analyzes`. Defensive copying of advisory strategy catalog |
+
+#### Mapping to Capstone Subsystem 3 Architecture
+- **`EmissionMetric`:** Directly mirrors the category breakdown cards and distribution chart elements on the Analytics Dashboard (`frontend/src/features/activities/pages/Dashboard.jsx`).
+- **`AnalyticsEngine`:** Represents the domain aggregation engine powering `GET /analytics/summary` and monthly reporting trends in `backend/app/analytics/`.
+- **`SustainabilityAdvisor`:** Encapsulates the recommendation generation engine powering the AI Coach (`frontend/src/features/activities/pages/AICoach.jsx`) and `POST /ai/recommendations`.
 
 ### Team Video Presentation (3–5 minutes)
 
@@ -203,7 +273,13 @@ All four team members should explain their own classes and how they correspond t
 ```bash
 cd backend
 python -m pip install -r requirements-dev.txt
-python -m pytest tests/test_oop_hometask1.py -v
-```
 
-These new tests are in addition to the existing Subsystem 2 unit tests. Their execution is not yet verified in this branch.
+# Run Subsystem 2 OOP tests
+python -m pytest tests/test_oop_hometask1.py -v
+
+# Run Subsystem 3 OOP tests
+python -m pytest tests/test_oop_subsystem3.py -v
+
+# Run all Hometask 1 tests together
+python -m pytest tests/test_oop_hometask1.py tests/test_oop_subsystem3.py -v
+```
