@@ -18,53 +18,62 @@ The OOP implementation lives in `backend/app/activities/oop.py`. The FastAPI act
 ```mermaid
 classDiagram
     class ActivityRecord {
-      -str _category
-      -str _activity_type
-      -Decimal _amount
-      -str _unit
-      -date _date
-      -str _enterprise_id
-      +get_amount() float
-      +set_amount(value)
-      +get_period() str
+        -str _category
+        -str _activity_type
+        -Decimal _amount
+        -str _unit
+        -date _date
+        -str _enterprise_id
+        +get_amount() float
+        +set_amount(value)
+        +get_period() str
     }
     class EmissionFactor {
-      -str _category
-      -str _activity_type
-      -Decimal _factor
-      -str _unit
-      -str _source
-      +get_factor() float
-      +set_factor(value)
-      +matches(activity) bool
+        -str _category
+        -str _activity_type
+        -Decimal _factor
+        -str _unit
+        -str _source
+        +matches(activity) bool
+        +get_factor() float
+        +set_factor(value)
     }
     class CalculationService {
-      -dict _factor_catalog
-      +initialize_factors()
-      +get_factor_catalog() dict
-      +set_factor_catalog(catalog)
-      +get_emission_factor(category, type) EmissionFactor
-      +validate_units(activity, factor)
-      +calculate(activity) dict
+        -dict _factor_catalog
+        -dict _factors
+        +initialize_factors()
+        +get_factor_catalog() dict
+        +set_factor_catalog(catalog)
+        +get_emission_factor(category, type) EmissionFactor
+        +validate_units(activity, factor)
+        +calculate(activity) dict
     }
+    CalculationService "1" *-- "0..*" EmissionFactor : owns
+    CalculationService ..> ActivityRecord : calculates for
+    EmissionFactor ..> ActivityRecord : matches
     class ActivityRouter {
-      +prepare_activity(activity, enterprise_id) dict
-      +create_activity(activity, enterprise_id)
-      +update_activity(id, activity, enterprise_id)
+        +prepare_activity(activity, enterprise_id) dict
+        +create_activity(activity, enterprise_id)
+        +update_activity(id, activity, enterprise_id)
     }
     class MongoActivityRepository {
-      +create(record, enterprise_id) dict
-      +update(id, record, enterprise_id) dict
+        +create(record, enterprise_id) dict
+        +update(id, record, enterprise_id) dict
     }
     ActivityRouter ..> ActivityRecord : constructs
     ActivityRouter ..> CalculationService : calculates
-    CalculationService ..> ActivityRecord : processes
-    CalculationService ..> EmissionFactor : creates/uses
-    EmissionFactor ..> ActivityRecord : matches
     ActivityRouter ..> MongoActivityRepository : persists
 ```
 
-Each model also exposes getters/setters for its other private attributes; see source for the full implementation.
+### UML semantics and multiplicities
+
+- **Composition**: `CalculationService "1" *-- "0..*" EmissionFactor`. One service owns a collection of emission-factor objects, built from its configuration. The current JSON file contains multiple factors; `0..*` permits an empty catalog in test configurations.
+- **Dependency**: `CalculationService ..> ActivityRecord`. A calculation receives one activity at a time; the service does **not** store or own these activity objects.
+- **Dependency**: `EmissionFactor ..> ActivityRecord`. `matches(activity)` temporarily inspects a supplied activity; it does not retain it.
+- **No aggregation (hollow diamond)** is justified between these three classes. An enterprise-to-activities aggregation would require an actual `Enterprise` domain object and association; today `ActivityRecord` keeps only `enterprise_id`, while the repository stores multiple documents per enterprise. Drawing aggregation here would misrepresent the Python code.
+- Multiplicity is applied to the **owned object relationship**. UML dependencies do not normally carry association multiplicities, so we do not fabricate them.
+
+Each domain class exposes getters and setters for its attributes; see the source for the full list.
 
 ## Run the tests
 
