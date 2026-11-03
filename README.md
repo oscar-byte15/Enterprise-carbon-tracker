@@ -146,9 +146,70 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 | Team member | Assigned subsystem | Implementation |
 |---|---|---|
 | Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes, UML and unit tests](docs/Hometask1-Subsystem2.md) |
-| Other team members | To be completed by the team | Add each member's subsystem and three classes before submission |
+| Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
+| Other team members | Subsystems 1 & 4 | Add each member's subsystem and three classes before submission |
 
 ### System Design — UML Diagrams
+
+#### Subsystem 1 - Authentication & Enterprise Management
+
+The User and Department classes are logically associated with Enterprise through the `enterprise_id` attribute. These relationships represent references by identifier rather than direct object ownership. Therefore, no composition or aggregation is implemented between the three classes.
+
+```mermaid
+
+classDiagram
+    class User {
+        -str _id
+        -str _email
+        -str _password_hash
+        -str _enterprise_id
+        -str _role
+        +__init__(email, password_hash, enterprise_id, role)
+        +get_email() str
+        +set_email(email)
+        +get_role() str
+        +set_role(role)
+    }
+
+    class Enterprise {
+        -str _enterprise_id
+        -str _company_name
+        -str _industry
+        -str _address
+        +__init__(company_name, industry, enterprise_id)
+        +get_enterprise_id() str
+        +get_company_name() str
+        +get_industry() str
+        +get_address() str
+        +set_company_name(name)
+        +set_industry(industry)
+        +set_address(address)
+        +update_profile(company_name, industry, address)
+    }
+
+    class Department {
+        -str _department_id
+        -str _enterprise_id
+        -str _name
+        -str _description
+        +__init__(enterprise_id, name, description, department_id)
+        +get_department_id() str
+        +get_enterprise_id() str
+        +get_name() str
+        +get_description() str
+        +set_name(name)
+        +set_description(description)
+        +update_details(name, description)
+    }
+
+    User ..> Enterprise : references enterprise_id
+    Department ..> Enterprise : references enterprise_id
+```
+
+
+
+
+#### Subsystem 2 — Carbon Activity Management & Calculation Engine
 
 The composition (◆) indicates CalculationService owns zero or more EmissionFactor objects; there is no aggregation between the three classes. ActivityRecord is supplied to a calculation, rather than owned. Full design details are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
 
@@ -190,7 +251,106 @@ classDiagram
     EmissionFactor ..> ActivityRecord : matches
 ```
 
-**Team note:** Add UML diagrams for Subsystems 1, 3, and 4 when their owners finish implementing their three classes.
+#### Subsystem 3 — Analytics Dashboard & AI Advisory
+
+The composition (◆) models AnalyticsEngine creating, managing, and owning multiple EmissionMetric instances. SustainabilityAdvisor exhibits a dependency (..>) on AnalyticsEngine, analyzing enterprise metrics without retaining ownership.
+
+```mermaid
+classDiagram
+    class EmissionMetric {
+        -str _category
+        -Decimal _co2e_kg
+        -Decimal _percentage
+        -int _activity_count
+        +get_category() str
+        +set_category(value)
+        +get_co2e_kg() float
+        +set_co2e_kg(value)
+        +get_percentage() float
+        +set_percentage(value)
+        +get_activity_count() int
+        +set_activity_count(value)
+        +to_dict() dict
+    }
+    class AnalyticsEngine {
+        -str _enterprise_id
+        -dict _metrics
+        -Decimal _total_co2e_kg
+        +initialize_metrics()
+        +get_enterprise_id() str
+        +set_enterprise_id(value)
+        +get_total_co2e_kg() float
+        +get_metrics() dict
+        +set_metrics(metrics)
+        +add_metric(category, co2e_kg, count)
+        +recalculate_percentages()
+        +get_top_category() str
+        +generate_summary() dict
+    }
+    class SustainabilityAdvisor {
+        -str _advisor_mode
+        -dict _catalog
+        +initialize_catalog()
+        +get_advisor_mode() str
+        +set_advisor_mode(mode)
+        +get_catalog() dict
+        +set_catalog(catalog)
+        +generate_recommendations(analytics) list
+    }
+    AnalyticsEngine "1" *-- "0..*" EmissionMetric : owns
+    SustainabilityAdvisor ..> AnalyticsEngine : analyzes
+```
+
+**Team note:** Add UML diagrams for Subsystems 1 and 4 when their owners finish implementing their three classes.
+
+
+### Subsystem 1 — User Authentication & Enterprise Management (OOP Implementation)
+
+The Subsystem 1 OOP implementation is located in `backend/app/oop_subsystem1.py`.
+
+This subsystem focuses on user account information, enterprise profiles, and department management. Three OOP classes have been implemented to represent the core entities of Subsystem 1.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Methods |
+|---|---|---|---|
+| `User` | Represents a user account associated with an enterprise. Stores the user's email, hashed password, enterprise ID, and role. | `__init__(email, password_hash, enterprise_id, role="admin")` | Uses protected-style attributes (`_email`, `_role`, etc.) and getter/setter methods to access and update account information. |
+| `Enterprise` | Represents an enterprise profile, including its company name, industry, and address. | `__init__(company_name, industry, enterprise_id=None)` | Provides getter/setter methods for enterprise information and `update_profile()` for updating multiple profile fields. |
+| `Department` | Represents a department belonging to an enterprise, including its name and description. | `__init__(enterprise_id, name, description=None, department_id=None)` | Provides getter/setter methods for department information and `update_details()` for updating department details. |
+
+#### Mapping to Capstone Subsystem 1 Architecture
+
+- **`User`:** Corresponds to the user account information managed during registration and authentication.
+- **`Enterprise`:** Represents the enterprise profile created during registration and maintained through enterprise profile management.
+- **`Department`:** Represents the department information managed through department creation and listing functionality.
+
+#### OOP Concepts Applied
+
+- **Constructors:** Each class uses `__init__()` to initialize its attributes.
+- **Encapsulation:** Attributes use a leading underscore, with getter and setter methods providing controlled access.
+- **Data validation:** Setter methods validate selected fields, such as non-empty email addresses, company names, and department names.
+- **Configuration methods:** `Enterprise.update_profile()` and `Department.update_details()` support updating object information.
+- **Class relationships:** `User` and `Department` reference an enterprise through `enterprise_id`.
+
+**Implementation note:** These classes are implemented separately for Hometask 1. The existing FastAPI routes and application behavior remain unchanged.
+
+
+### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
+
+The Subsystem 3 OOP implementation is located in `backend/app/analytics/oop.py`.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Relationships |
+|---|---|---|---|
+| `EmissionMetric` | Encapsulates an aggregated carbon metric for a category, tracking emissions, share percentage, and activity count | `__init__(category, co2e_kg, percentage=0.0, activity_count=0)` | Private attributes with setters enforcing range and numeric constraints; `to_dict()` for dashboard serialization |
+| `AnalyticsEngine` | Aggregates enterprise activity records, calculates total emissions, computes category percentages, and detects the top carbon driver | `__init__(enterprise_id, raw_activities=None)` | **Composition:** `AnalyticsEngine "1" *-- "0..*" EmissionMetric : owns`. Defensive copies returned from `get_metrics()` |
+| `SustainabilityAdvisor` | Evaluates enterprise analytics to produce prioritized, actionable carbon mitigation recommendations (High/Medium/Low) | `__init__(advisor_mode="rules", catalog=None)` | **Dependency:** `SustainabilityAdvisor ..> AnalyticsEngine : analyzes`. Defensive copying of advisory strategy catalog |
+
+#### Mapping to Capstone Subsystem 3 Architecture
+- **`EmissionMetric`:** Directly mirrors the category breakdown cards and distribution chart elements on the Analytics Dashboard (`frontend/src/features/activities/pages/Dashboard.jsx`).
+- **`AnalyticsEngine`:** Represents the domain aggregation engine powering `GET /analytics/summary` and monthly reporting trends in `backend/app/analytics/`.
+- **`SustainabilityAdvisor`:** Encapsulates the recommendation generation engine powering the AI Coach (`frontend/src/features/activities/pages/AICoach.jsx`) and `POST /ai/recommendations`.
 
 ### Team Video Presentation (3–5 minutes)
 
@@ -203,7 +363,15 @@ All four team members should explain their own classes and how they correspond t
 ```bash
 cd backend
 python -m pip install -r requirements-dev.txt
-python -m pytest tests/test_oop_hometask1.py -v
-```
+# Run Subsystem 1 OOP tests
+python -m pytest tests/test_oop_subsystem1.py -v
 
-These new tests are in addition to the existing Subsystem 2 unit tests. Their execution is not yet verified in this branch.
+# Run Subsystem 2 OOP tests
+python -m pytest tests/test_oop_hometask1.py -v
+
+# Run Subsystem 3 OOP tests
+python -m pytest tests/test_oop_subsystem3.py -v
+
+# Run all Hometask 1 tests together
+python -m pytest tests/test_oop_hometask1.py tests/test_oop_subsystem3.py -v
+```
