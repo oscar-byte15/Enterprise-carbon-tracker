@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import ActivitiesSidebar from "./components/ActivitiesSidebar";
+import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
+import AICoach from "./pages/AICoach";
 import NewActivity from "./pages/NewActivity";
 import ActivityHistory from "./pages/ActivityHistory";
 import EditActivity from "./pages/EditActivity";
@@ -11,7 +14,7 @@ import { clearAuthSession } from "./services/authService";
 import "./activities.css";
 
 export default function ActivitiesLayout() {
-  const [activePage, setActivePage] = useState("login");
+  const [activePage, setActivePage] = useState("dashboard");
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(localStorage.getItem("enterprise_token")));
 
@@ -35,7 +38,7 @@ export default function ActivitiesLayout() {
 
   function handleAuthenticated(result) {
     setIsAuthenticated(Boolean(result?.access_token));
-    setActivePage("enterprise");
+    setActivePage("dashboard");
   }
 
   function handleLogout() {
@@ -45,37 +48,59 @@ export default function ActivitiesLayout() {
   }
 
   const pages = useMemo(() => ({
+    dashboard: {
+      title: "Executive Dashboard",
+      subtitle: "Subsystem 3 · Analytics Dashboard & Performance Tracking",
+      component: <Dashboard onNavigate={handleNavigate} />,
+    },
+    analytics: {
+      title: "Emissions Analytics & Trends",
+      subtitle: "Subsystem 3 · Visual Trend Analysis & Category Distribution",
+      component: <Analytics onNavigate={handleNavigate} />,
+    },
+    "ai-coach": {
+      title: "AI Sustainability Advisor",
+      subtitle: "Subsystem 3 · Contextual Decarbonization Intelligence",
+      component: <AICoach onNavigate={handleNavigate} />,
+    },
     login: {
       title: "Login",
+      subtitle: "Subsystem 1 · Authentication & Enterprise Management",
       component: <Login onAuthenticated={handleAuthenticated} onNavigate={handleNavigate} />,
     },
     register: {
       title: "Register",
+      subtitle: "Subsystem 1 · Authentication & Enterprise Management",
       component: <Register onAuthenticated={handleAuthenticated} onNavigate={handleNavigate} />,
     },
     enterprise: {
       title: "Enterprise profile",
+      subtitle: "Subsystem 1 · Authentication & Enterprise Management",
       component: <EnterpriseProfile onNavigate={handleNavigate} />,
     },
     departments: {
       title: "Departments",
+      subtitle: "Subsystem 1 · Authentication & Enterprise Management",
       component: <Departments onNavigate={handleNavigate} />,
     },
     new: {
       title: "New carbon activity",
+      subtitle: "Subsystem 2 · Carbon Activity Management",
       component: <NewActivity />,
     },
     history: {
       title: "Activity history",
+      subtitle: "Subsystem 2 · Carbon Activity Management",
       component: <ActivityHistory onEdit={handleEdit} />,
     },
     edit: {
       title: "Edit activity",
+      subtitle: "Subsystem 2 · Carbon Activity Management",
       component: <EditActivity activity={selectedActivity} onSaved={handleSaved} />,
     },
   }), [selectedActivity]);
 
-  const currentPage = pages[activePage] || pages.login;
+  const currentPage = pages[activePage] || pages.dashboard;
 
   return (
     <div className="activities-layout">
@@ -91,7 +116,7 @@ export default function ActivitiesLayout() {
           <div>
             <h1>{currentPage.title}</h1>
             <p>
-              Subsystem 1 · Authentication & Enterprise Management
+              {currentPage.subtitle}
             </p>
           </div>
 
