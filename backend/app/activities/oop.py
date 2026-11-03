@@ -146,7 +146,7 @@ class CalculationService:
 
     def initialize_factors(self):
         """Reload current factors from the production JSON configuration."""
-        self._factor_catalog = load_emission_factors()
+        self.set_factor_catalog(load_emission_factors())
 
     def get_factor_catalog(self):
         return {category: {name: dict(data) for name, data in types.items()}
@@ -162,6 +162,14 @@ class CalculationService:
                 category: {name: dict(data) for name, data in types.items()}
                 for category, types in catalog.items()
             }
+            # Composition: this service creates and owns its factor objects.
+            self._factors = {
+                (category, name): EmissionFactor(
+                    category, name, data["factor"], data["unit"], data["source"]
+                )
+                for category, types in self._factor_catalog.items()
+                for name, data in types.items()
+            }
 
     def get_emission_factor(self, category, activity_type):
         category_factors = self._factor_catalog.get(category)
@@ -170,8 +178,7 @@ class CalculationService:
         data = category_factors.get(activity_type)
         if data is None:
             raise ValueError(f"Unknown activity type: {activity_type}")
-        return EmissionFactor(category, activity_type, data["factor"],
-                              data["unit"], data["source"])
+        return self._factors[(category, activity_type)]
 
     def validate_units(self, activity: ActivityRecord, factor: EmissionFactor):
         if not factor.matches(activity):
