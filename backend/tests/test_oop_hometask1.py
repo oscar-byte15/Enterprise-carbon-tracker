@@ -86,3 +86,17 @@ def test_transport_and_waste_calculations():
         activity = ActivityRecord(category, activity_type, 5, unit,
                                   date(2026, 11, 2), "enterprise-1")
         assert service.calculate(activity)["co2e_kg"] >= 0
+
+
+def test_service_composes_reusable_factor_instances():
+    service = CalculationService()
+    first = service.get_emission_factor("electricity", "Grid electricity")
+    second = service.get_emission_factor("electricity", "Grid electricity")
+    assert first is second
+    assert isinstance(first, EmissionFactor)
+
+    # Reloading configuration replaces the owned factor objects.
+    service.initialize_factors()
+    third = service.get_emission_factor("electricity", "Grid electricity")
+    assert third is not first
+    assert service.calculate(make_activity())["co2e_kg"] == 3.52
