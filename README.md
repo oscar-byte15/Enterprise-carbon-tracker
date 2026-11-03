@@ -151,6 +151,64 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 
 ### System Design — UML Diagrams
 
+#### Subsystem 1 - Authentication & Enterprise Management
+
+The User and Department classes are logically associated with Enterprise through the `enterprise_id` attribute. These relationships represent references by identifier rather than direct object ownership. Therefore, no composition or aggregation is implemented between the three classes.
+
+```mermaid
+
+classDiagram
+    class User {
+        -str _id
+        -str _email
+        -str _password_hash
+        -str _enterprise_id
+        -str _role
+        +__init__(email, password_hash, enterprise_id, role)
+        +get_email() str
+        +set_email(email)
+        +get_role() str
+        +set_role(role)
+    }
+
+    class Enterprise {
+        -str _enterprise_id
+        -str _company_name
+        -str _industry
+        -str _address
+        +__init__(company_name, industry, enterprise_id)
+        +get_enterprise_id() str
+        +get_company_name() str
+        +get_industry() str
+        +get_address() str
+        +set_company_name(name)
+        +set_industry(industry)
+        +set_address(address)
+        +update_profile(company_name, industry, address)
+    }
+
+    class Department {
+        -str _department_id
+        -str _enterprise_id
+        -str _name
+        -str _description
+        +__init__(enterprise_id, name, description, department_id)
+        +get_department_id() str
+        +get_enterprise_id() str
+        +get_name() str
+        +get_description() str
+        +set_name(name)
+        +set_description(description)
+        +update_details(name, description)
+    }
+
+    User ..> Enterprise : references enterprise_id
+    Department ..> Enterprise : references enterprise_id
+```
+
+
+
+
 #### Subsystem 2 — Carbon Activity Management & Calculation Engine
 
 The composition (◆) indicates CalculationService owns zero or more EmissionFactor objects; there is no aggregation between the three classes. ActivityRecord is supplied to a calculation, rather than owned. Full design details are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
@@ -245,6 +303,38 @@ classDiagram
 
 **Team note:** Add UML diagrams for Subsystems 1 and 4 when their owners finish implementing their three classes.
 
+
+### Subsystem 1 — User Authentication & Enterprise Management (OOP Implementation)
+
+The Subsystem 1 OOP implementation is located in `backend/app/oop_subsystem1.py`.
+
+This subsystem focuses on user account information, enterprise profiles, and department management. Three OOP classes have been implemented to represent the core entities of Subsystem 1.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Methods |
+|---|---|---|---|
+| `User` | Represents a user account associated with an enterprise. Stores the user's email, hashed password, enterprise ID, and role. | `__init__(email, password_hash, enterprise_id, role="admin")` | Uses protected-style attributes (`_email`, `_role`, etc.) and getter/setter methods to access and update account information. |
+| `Enterprise` | Represents an enterprise profile, including its company name, industry, and address. | `__init__(company_name, industry, enterprise_id=None)` | Provides getter/setter methods for enterprise information and `update_profile()` for updating multiple profile fields. |
+| `Department` | Represents a department belonging to an enterprise, including its name and description. | `__init__(enterprise_id, name, description=None, department_id=None)` | Provides getter/setter methods for department information and `update_details()` for updating department details. |
+
+#### Mapping to Capstone Subsystem 1 Architecture
+
+- **`User`:** Corresponds to the user account information managed during registration and authentication.
+- **`Enterprise`:** Represents the enterprise profile created during registration and maintained through enterprise profile management.
+- **`Department`:** Represents the department information managed through department creation and listing functionality.
+
+#### OOP Concepts Applied
+
+- **Constructors:** Each class uses `__init__()` to initialize its attributes.
+- **Encapsulation:** Attributes use a leading underscore, with getter and setter methods providing controlled access.
+- **Data validation:** Setter methods validate selected fields, such as non-empty email addresses, company names, and department names.
+- **Configuration methods:** `Enterprise.update_profile()` and `Department.update_details()` support updating object information.
+- **Class relationships:** `User` and `Department` reference an enterprise through `enterprise_id`.
+
+**Implementation note:** These classes are implemented separately for Hometask 1. The existing FastAPI routes and application behavior remain unchanged.
+
+
 ### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
 
 The Subsystem 3 OOP implementation is located in `backend/app/analytics/oop.py`.
@@ -273,6 +363,8 @@ All four team members should explain their own classes and how they correspond t
 ```bash
 cd backend
 python -m pip install -r requirements-dev.txt
+# Run Subsystem 1 OOP tests
+python -m pytest tests/test_oop_subsystem1.py -v
 
 # Run Subsystem 2 OOP tests
 python -m pytest tests/test_oop_hometask1.py -v
