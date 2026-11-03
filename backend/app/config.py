@@ -1,7 +1,13 @@
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
+# Search and load .env from backend directory and project root directory
+_backend_dir = Path(__file__).resolve().parent.parent
+_root_dir = _backend_dir.parent
+load_dotenv(_backend_dir / ".env")
+load_dotenv(_root_dir / ".env")
 load_dotenv()
 
 
