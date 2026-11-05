@@ -1,4 +1,3 @@
-
 from typing import Any
 from uuid import uuid4
 
@@ -6,6 +5,7 @@ from pymongo import MongoClient, ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from .config import settings
+from .exceptions import EmailAlreadyRegisteredError, EnterpriseNotFoundError
 from .security import hash_password
 
 
@@ -43,7 +43,7 @@ class MongoStore:
         normalized_email = email.lower().strip()
 
         if self.users.find_one({"email": normalized_email}):
-            raise ValueError("Email is already registered")
+            raise EmailAlreadyRegisteredError("Email is already registered")
 
         enterprise_id = str(uuid4())
 
@@ -78,7 +78,7 @@ class MongoStore:
             self.enterprises.delete_one({
                 "enterprise_id": enterprise_id
             })
-            raise ValueError(
+            raise EmailAlreadyRegisteredError(
                 "Email is already registered"
             ) from exc
         except Exception:
@@ -130,7 +130,7 @@ class MongoStore:
             )
 
         if enterprise is None:
-            raise ValueError("Enterprise not found")
+            raise EnterpriseNotFoundError("Enterprise not found")
 
         return enterprise
 
