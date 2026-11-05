@@ -77,7 +77,7 @@ Each developer runs an independent local MongoDB database. Docker Compose does n
 - FastAPI communicates with MongoDB through the Docker Compose service network.
 - The frontend communicates with FastAPI through the exposed backend port.
 - Code changes may require rebuilding Docker images.
-- Authentication data is currently stored in memory until MongoDB persistence is implemented for Subsystem 1.
+- Authentication and enterprise records are persisted in MongoDB through `backend/app/mongo_store.py`, which is instantiated by `backend/app/store.py` for the FastAPI routes.
 - For additional information, refer to `DOCKER-README.md`.
 
 ## Running Unit Tests with Docker
@@ -206,9 +206,6 @@ classDiagram
     Department ..> Enterprise : references enterprise_id
 ```
 
-
-
-
 #### Subsystem 2 — Carbon Activity Management & Calculation Engine
 
 The composition (◆) indicates CalculationService owns zero or more EmissionFactor objects; there is no aggregation between the three classes. ActivityRecord is supplied to a calculation, rather than owned. Full design details are available in [Hometask 1 — Subsystem 2](docs/Hometask1-Subsystem2.md).
@@ -303,7 +300,6 @@ classDiagram
 
 **Team note:** Add UML diagrams for Subsystems 1 and 4 when their owners finish implementing their three classes.
 
-
 ### Subsystem 1 — User Authentication & Enterprise Management (OOP Implementation)
 
 The Subsystem 1 OOP implementation is located in `backend/app/oop_subsystem1.py`.
@@ -333,7 +329,6 @@ This subsystem focuses on user account information, enterprise profiles, and dep
 - **Class relationships:** `User` and `Department` reference an enterprise through `enterprise_id`.
 
 **Implementation note:** These classes are implemented separately for Hometask 1. The existing FastAPI routes and application behavior remain unchanged.
-
 
 ### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
 
@@ -375,3 +370,72 @@ python -m pytest tests/test_oop_subsystem3.py -v
 # Run all Hometask 1 tests together
 python -m pytest tests/test_oop_hometask1.py tests/test_oop_subsystem3.py -v
 ```
+
+## Hometask 3 — Web APIs & Database Access Layers
+
+This assignment documents the current FastAPI + MongoDB implementation of the Enterprise Carbon Tracker. The project is structured as a full-stack application: a React frontend in `frontend/` consumes the backend API, the FastAPI backend in `backend/app/` exposes the business logic, and MongoDB persists tenant and activity data in the database layer.
+
+### Project architecture
+
+- **Frontend:** `frontend/` contains the React + Vite app for authentication, activity capture, analytics, and enterprise profile screens.
+- **Backend:** `backend/app/` contains FastAPI routers, validation schemas, calculation logic, analytics services, and MongoDB access objects.
+- **Database:** MongoDB is used for persistent storage of users, enterprises, departments, and carbon activity records. The app connects through `pymongo` using the configured `MONGODB_URI` and `MONGODB_DB` values in `backend/app/config.py`.
+
+### Implemented API endpoints
+
+The API is assembled in `backend/app/main.py` and includes the following authenticated and public routes.
+
+#### Subsystem 1 — Authentication & Enterprise Management
+
+`backend/app/routes.py` exposes the following endpoints:
+
+- `POST /login` — authenticate a user and return a JWT token
+- `POST /register` — create an enterprise and its admin user
+- `GET /profile` — return the current enterprise profile
+- `PUT /profile` — update the current enterprise profile
+- `GET /departments` — list departments for the current enterprise
+- `POST /departments` — create a department for the current enterprise
+
+#### Subsystem 2 — Carbon Activity Management & Calculation Engine
+
+`backend/app/activities/router.py` registers the `"/activities"` router and implements:
+
+- `POST /activities/` — create an activity, validate inputs, calculate CO2e, and save the record
+- `GET /activities/` — list all activities for the authenticated enterprise
+- `GET /activities/{activity_id}` — fetch one activity by ID for the authenticated enterprise
+- `PUT /activities/{activity_id}` — update an activity owned by the enterprise
+- `DELETE /activities/{activity_id}` — delete an activity owned by the enterprise
+
+#### Subsystem 3 — Analytics Dashboard & AI Advisory
+
+`backend/app/analytics/router.py` exposes:
+
+- `GET /analytics/summary` — aggregate enterprise emissions by category and period
+- `GET /analytics/trends` — return monthly trend data for the enterprise
+
+`backend/app/analytics/ai_router.py` exposes:
+
+- `POST /ai/recommendations` — generate reduction recommendations for the authenticated enterprise
+
+#### Service health
+
+- `GET /health` — returns application health status
+
+### MongoDB persistence implementation
+
+The database access layer is implemented with MongoDB-backed service objects rather than an in-memory store.
+
+- `backend/app/mongo_store.py` defines `MongoStore`, which connects to MongoDB and manages the `users`, `enterprises`, and `departments` collections.
+- The constructor creates unique indexes for `email`, `enterprise_id`, and `department_id` and adds an `enterprise_id` index for department queries.
+- `create_enterprise()`, `get_user_by_email()`, `get_enterprise()`, `update_enterprise()`, `list_departments()`, and `create_department()` are the persistence methods used by Subsystem 1 routes.
+- `backend/app/store.py` imports and instantiates `MongoStore` as `store`, which is the object used by the authentication and enterprise API layer.
+- `backend/app/activities/mongo_repository.py` defines `MongoActivityRepository`, which manages the `activity_records` collection and supports create, list, fetch-by-id, update, and delete operations keyed by `enterprise_id` and `id`.
+- The repository creates unique and filtered indexes to support enterprise-scoped queries and chronological retrieval of activity data.
+
+### How the API routes interact with the database layer
+
+The backend routes are intentionally thin and delegate persistence to the database access objects:
+
+- Subsystem 1 routes in `backend/app/routes.py` call `store.get_user_by_email()`, `store.create_enterprise()`, `store.get_enterprise()`, `store.update_enterprise()`, `store.list_departments()`, and `store.create_department()`.
+- Subsystem 2 routes in `backend/app/activities/router.py` validate and calculate the activity payload, then pass the result to `activity_repository.create()`, `get_all()`, `get_by_id()`, `update()`, and `delete()`.
+- Subsystem 3 analytics routes do not bypass the repository layer: `backend/app/analytics/service.py` uses `activity_repository.collection.aggregate(...)` to calculate summaries and trends, while the AI advisor also reads enterprise data via `store.get_enterprise()`.
