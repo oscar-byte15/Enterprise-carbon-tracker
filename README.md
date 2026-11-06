@@ -150,7 +150,6 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 | Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes (ActivityRecord, EmissionFactor, CalculationService) and UML](#subsystem-2--carbon-activity-management--calculation-engine) |
 | Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
 
-
 ### System Design — UML Diagrams
 
 #### Subsystem 1 - Authentication & Enterprise Management
@@ -434,6 +433,301 @@ python -m pytest tests/test_oop_subsystem3.py -v
 python -m pytest tests/test_oop_hometask1.py tests/test_oop_subsystem3.py -v
 ```
 
+## Hometask 2 — Real-Time Data Processing
+
+### Project Overview
+
+**Project:** Enterprise Carbon Footprint Tracker & AI Assistant
+
+**Submission Branch:** `HomeworkAssignment2`
+
+This assignment implements an event-driven stream processing
+framework in Python using Object-Oriented Programming (OOP).
+
+The framework filters operational carbon activities by
+GHG emission scope (Scope 1, Scope 2, and Scope 3) and
+transforms valid activity measurements into metric tons
+of CO2 equivalent (CO2e).
+
+### Subsystem 2 — Carbon Activity Streaming Pipeline
+
+**Implemented by:** Oscar Daniel de la Cruz Jara
+
+**Source Code:**
+`backend/app/activities/subsystem2_homeassignment2.py`
+
+**Automated Tests:**
+`backend/tests/test_subsystem2_homeassignment2.py`
+
+### Implemented Classes
+
+| Class | Responsibility | OOP Concept |
+|---|---|---|
+| `StreamProcessor` | Defines the abstract processing interface. | Abstract Base Class |
+| `ScopeFilter` | Filters events according to emission scope. | Inheritance & Polymorphism |
+| `EmissionTransformer` | Converts activity metrics into metric tons of CO2e. | Inheritance & Polymorphism |
+| `ProcessingPipeline` | Composes and executes stream processors. | Operator Overloading & Generators |
+| `EventStream` | Iterates through incoming activity events. | Iterators |
+
+### UML Class Diagram — Subsystem 2
+
+```mermaid
+classDiagram
+    direction TB
+
+    class StreamProcessor {
+        <<abstract>>
+        +process(event: dict) dict | None*
+        +__or__(other: StreamProcessor) ProcessingPipeline
+    }
+
+    class ScopeFilter {
+        +VALID_SCOPES: set
+        -_allowed_scopes: set
+        +__init__(allowed_scopes: set)
+        +process(event: dict) dict | None
+    }
+
+    class EmissionTransformer {
+        -_calculation_service: CalculationService
+        +__init__(calculation_service=None)
+        +process(event: dict) dict
+    }
+
+    class ProcessingPipeline {
+        -_processors: list
+        +__init__(processors: list)
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +process(event: dict) dict | None
+        +run(stream) Generator
+    }
+
+    class EventStream {
+        -_events: Iterator
+        +__init__(events)
+        +__iter__() EventStream
+        +__next__() dict
+    }
+
+    class ActivityRecord {
+        -_category: str
+        -_activity_type: str
+        -_amount: Decimal
+        -_unit: str
+        -_date: date
+        -_enterprise_id: str
+        +__init__(category, activity_type, amount, unit, activity_date, enterprise_id)
+        +get_category()
+        +set_category(value)
+        +get_activity_type()
+        +set_activity_type(value)
+        +get_amount()
+        +set_amount(value)
+        +get_unit()
+        +set_unit(value)
+        +get_date()
+        +set_date(value)
+        +get_enterprise_id()
+        +set_enterprise_id(value)
+        +get_period()
+    }
+
+    class CalculationService {
+        -_factor_catalog: dict
+        -_factors: dict
+        +__init__(factor_catalog=None)
+        +initialize_factors()
+        +get_factor_catalog()
+        +set_factor_catalog(catalog)
+        +get_emission_factor(category, activity_type)
+        +validate_units(activity, factor)
+        +calculate(activity)
+    }
+
+    class EmissionFactor {
+        -_category: str
+        -_activity_type: str
+        -_factor: Decimal
+        -_unit: str
+        -_source: str
+        +__init__(category, activity_type, factor, unit, source)
+        +get_category()
+        +set_category(value)
+        +get_activity_type()
+        +set_activity_type(value)
+        +get_factor()
+        +set_factor(value)
+        +get_unit()
+        +set_unit(value)
+        +get_source()
+        +set_source(value)
+        +matches(activity)
+    }
+
+    StreamProcessor <|-- ScopeFilter
+    StreamProcessor <|-- EmissionTransformer
+    StreamProcessor <|-- ProcessingPipeline
+
+    ProcessingPipeline "0..*" o-- "1..*" StreamProcessor : aggregates
+    EmissionTransformer "0..*" --> "1" CalculationService : references
+
+    EmissionTransformer ..> ActivityRecord : creates
+    ProcessingPipeline ..> EventStream : consumes
+    CalculationService "1" *-- "0..*" EmissionFactor : owns
+    CalculationService ..> ActivityRecord : calculates
+```
+
+### OOP Concepts Applied
+
+**1. Abstract Base Classes**
+
+`StreamProcessor` inherits from Python's `ABC` and declares
+`process()` using `@abstractmethod`.
+
+**2. Inheritance and Polymorphism**
+
+`ScopeFilter`, `EmissionTransformer`, and `ProcessingPipeline`
+inherit from `StreamProcessor` and implement `process()`
+with different behaviors.
+
+**3. Operator Overloading**
+
+The `__or__()` method allows processors to be composed
+using the `|` operator.
+
+**4. Iterators and Generators**
+
+`EventStream` implements `__iter__()` and `__next__()`,
+while `ProcessingPipeline.run()` uses `yield` for lazy
+event processing.
+
+### Processing Example
+
+```python
+pipeline = (
+    ScopeFilter({"Scope 2"})
+    | EmissionTransformer()
+)
+
+for result in pipeline.run(EventStream(events)):
+    print(result["co2e_tons"])
+```
+
+For an electricity activity of 100 kWh with an emission
+factor of 0.352 kg CO2e/kWh, the result is:
+
+```text
+0.0352 metric tons CO2e
+```
+
+### Run Automated Tests
+
+From the `backend` directory:
+
+```bash
+# Run Subsystem 2 tests
+python -m pytest tests/test_subsystem2_homeassignment2.py -v
+```
+
+---
+
+### Subsystem 3 — Analytics Dashboard & AI Advisory Streaming Pipeline
+
+**Implemented by:** Usama Rasheed
+
+**Source Code:**
+`backend/app/analytics/subsystem3_homeassignment2.py`
+
+**Automated Tests:**
+`backend/tests/test_subsystem3_homeassignment2.py`
+
+**Interactive Demonstration:**
+`backend/demo_subsystem3_homeassignment2.py`
+
+#### Scenario Overview
+
+Subsystem 3 ingests high-frequency, operational carbon telemetry feeds across three critical enterprise activity streams:
+1. **Business Travel Flight Bookings (Scope 3):** Flight distance in kilometers, passenger volume, cabin travel tier, and radiative forcing flight categorization.
+2. **Data Center Server Utility Logs (Scope 2):** Server electrical energy in kWh, Power Usage Effectiveness (PUE), server load ratio, and regional grid intensity factors.
+3. **Freight Logistics Payloads (Scope 1 & Scope 3):** Heavy freight cargo weight in tons, transit distance, and multimodal transport logistics (road, rail, sea, air freight).
+
+The streaming pipeline filters operational activity records by GHG Protocol scope tags (`Scope 1`, `Scope 2`, `Scope 3`) and transforms real-time metrics into **metric tons of $\text{CO}_2\text{e}$** ($\text{tCO}_2\text{e}$).
+
+#### Implemented Classes
+
+| Class | Responsibility | OOP Concept |
+|---|---|---|
+| `StreamProcessor` | Abstract root interface contract defining `process()` and pipeline composition. | Abstract Base Class (ABC) |
+| `ScopeFilter` | Filters streaming telemetry events by GHG emission scope (`Scope 1`, `Scope 2`, `Scope 3`). | Inheritance & Polymorphism |
+| `FlightTelemetryProcessor` | Transforms corporate flight bookings into metric tons of CO2e based on distance, cabin class, and pkm factors. | Inheritance & Polymorphism |
+| `DataCenterTelemetryProcessor` | Transforms server utility and compute logs into metric tons of CO2e considering PUE and grid intensity. | Inheritance & Polymorphism |
+| `FreightTelemetryProcessor` | Transforms freight shipping payloads into metric tons of CO2e using modal tonne-kilometer factors. | Inheritance & Polymorphism |
+| `ProcessingPipeline` | Sequentially chains and executes stream processors using operator composition and lazy generators. | Operator Overloading (`\|`, `+`) & Generators (`yield`) |
+| `TelemetryStream` | Iterates over incoming telemetry events one by one. | Iterators (`__iter__`, `__next__`) |
+
+#### UML Class Diagram — Subsystem 3
+
+```mermaid
+classDiagram
+    class ValueError {
+        <<Python Standard Library>>
+    }
+    class Subsystem3Error {
+        <<Base Exception>>
+    }
+    class InvalidMetricError {
+        +negative or non-finite CO2e
+        +out-of-range percentage
+        +invalid category
+        +invalid activity count
+    }
+    class InvalidDatePeriodError {
+        +malformed YYYY-MM
+        +month outside 01-12
+        +year outside 2000-2100
+    }
+    class AnalyticsAggregationError {
+        +empty enterprise ID
+        +malformed metrics dict
+        +pipeline aggregation failure
+    }
+    class InsufficientDataError {
+        +zero activities when required
+        +missing telemetry for period
+    }
+    class AIAdvisorError {
+        +invalid advisor mode
+        +invalid recommendations config
+        +unrecoverable advisor failure
+    }
+
+    ValueError <|-- Subsystem3Error
+    Subsystem3Error <|-- InvalidMetricError
+    Subsystem3Error <|-- InvalidDatePeriodError
+    Subsystem3Error <|-- AnalyticsAggregationError
+    Subsystem3Error <|-- InsufficientDataError
+    Subsystem3Error <|-- AIAdvisorError
+```
+
+### Run Hometask 4 Tests
+
+From the `backend/` directory, install development dependencies and run:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py tests/test_subsystem3_exceptions.py -v
+```
+
+The three Hometask 4 modules define **65 test cases** in total (6 for Subsystem 1, 15 for Subsystem 2, and 44 for Subsystem 3). The tests use MongoMock and mocked persistence methods to avoid modifying production data.
+
+### Team Video Presentation
+
+**Duration:** 5 minutes
+
+**Video Link:** Pending team recording.
+Replace this placeholder with the direct video link
+before submission.
+
 ## Hometask 3 — Web APIs & Database Access Layers
 
 This assignment documents the current FastAPI + MongoDB implementation of the Enterprise Carbon Tracker. The project is structured as a full-stack application: a React frontend in `frontend/` consumes the backend API, the FastAPI backend in `backend/app/` exposes the business logic, and MongoDB persists tenant and activity data in the database layer.
@@ -529,78 +823,18 @@ The backend routes are intentionally thin and delegate persistence to the databa
 - HTTP mapping in `backend/app/activities/router.py`: invalid activity data yields **422 Unprocessable Entity** and missing activities yield **404 Not Found**.
 - Test module: `backend/tests/test_subsystem2_exceptions.py`. **15 pytest test cases** (13 test functions, including 3 parameterized invalid amounts), covering exception inheritance, invalid input and unit handling, missing factors, valid calculation, HTTP error mapping, activity creation, and enterprise data isolation.
 
-### Subsystem 3 — Analytics Dashboard & AI Advisory
-
-**Implemented by Usama Rasheed.**
-
-- Custom exception classes: `backend/app/analytics/exceptions.py`.
-  - `Subsystem3Error`: base application exception (subclass of `ValueError` to preserve compatibility with existing callers).
-  - `InvalidMetricError`: raised when emission metric amounts, percentages, categories, or activity counts fail domain validation.
-  - `InvalidDatePeriodError`: raised when period strings (e.g. malformed `YYYY-MM` format or month outside 01–12) or year filters (outside 2000–2100) are invalid.
-  - `AnalyticsAggregationError`: raised when aggregation pipelines fail, enterprise IDs are invalid/empty, or internal analytics states are corrupted.
-  - `InsufficientDataError`: raised when queries explicitly require existing activity telemetry but no matching records exist.
-  - `AIAdvisorError`: raised when AI advisory recommendation generation fails, unrecoverable synthesis errors occur, or advisor parameters are misconfigured.
-- Error handling in `backend/app/analytics/oop.py`, `backend/app/analytics/service.py`, and `backend/app/analytics/ai_advisor.py`:
-  - Domain validation in OOP setters (`EmissionMetric`, `AnalyticsEngine`, `SustainabilityAdvisor`) raises typed `Subsystem3Error` exceptions.
-  - Service layer validates period format, valid month ranges (01–12), year bounds, non-empty enterprise context, and wraps MongoDB aggregation failures.
-  - AI Advisor validates enterprise IDs, non-empty activity constraints, and configuration parameters.
-- HTTP mapping in `backend/app/analytics/router.py` and `backend/app/analytics/ai_router.py`:
-  - **400 Bad Request**: `InvalidMetricError`, `InvalidDatePeriodError`, and uncaught `Subsystem3Error`.
-  - **404 Not Found**: `InsufficientDataError`.
-  - **500 Internal Server Error**: `AnalyticsAggregationError`, `AIAdvisorError`.
-- Test module: `backend/tests/test_subsystem3_exceptions.py`. **44 pytest test cases**, covering exception inheritance from `ValueError`, error message preservation, OOP domain validation, date/period/year boundary validation, aggregation failure wrapping, enterprise data isolation, and API HTTP error mappings.
-
-```mermaid
-classDiagram
-    class ValueError {
-        <<Python Standard Library>>
-    }
-    class Subsystem3Error {
-        <<Base Exception>>
-    }
-    class InvalidMetricError {
-        +negative or non-finite CO2e
-        +out-of-range percentage
-        +invalid category
-        +invalid activity count
-    }
-    class InvalidDatePeriodError {
-        +malformed YYYY-MM
-        +month outside 01-12
-        +year outside 2000-2100
-    }
-    class AnalyticsAggregationError {
-        +empty enterprise ID
-        +malformed metrics dict
-        +pipeline aggregation failure
-    }
-    class InsufficientDataError {
-        +zero activities when required
-        +missing telemetry for period
-    }
-    class AIAdvisorError {
-        +invalid advisor mode
-        +invalid recommendations config
-        +unrecoverable advisor failure
-    }
-
-    ValueError <|-- Subsystem3Error
-    Subsystem3Error <|-- InvalidMetricError
-    Subsystem3Error <|-- InvalidDatePeriodError
-    Subsystem3Error <|-- AnalyticsAggregationError
-    Subsystem3Error <|-- InsufficientDataError
-    Subsystem3Error <|-- AIAdvisorError
-```
-
 ### Run Hometask 4 Tests
 
 From the `backend/` directory, install development dependencies and run:
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py tests/test_subsystem3_exceptions.py -v
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py -v
 ```
 
-The three Hometask 4 modules define **65 test cases** in total (6 for Subsystem 1, 15 for Subsystem 2, and 44 for Subsystem 3). The tests use MongoMock and mocked persistence methods to avoid modifying production data.
+The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
-**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 and 3 OOP and repository tests can also be run as regression checks.
+**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
+
+
+---
