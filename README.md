@@ -338,11 +338,11 @@ This subsystem manages enterprise carbon activity data, emission factor configur
 
 #### Three Implemented Classes
 
-| Class | Responsibility | Constructor | Encapsulation / Methods |
-|---|---|---|---|
-| `ActivityRecord` | Represents an enterprise carbon activity, storing its category, activity type, consumption amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | Uses underscore-prefixed attributes with getters and setters; validates required fields, dates, and positive finite amounts; `get_period()` derives the YYYY-MM reporting period. |
-| `EmissionFactor` | Represents a conversion factor associated with an activity category, activity type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | Provides getters and setters with input validation; `matches(activity)` checks the activity category, type, and unit against the configured factor. |
-| `CalculationService` | Loads the emission factor catalog, creates and manages `EmissionFactor` objects, validates activity units, and calculates CO2e emissions. | `__init__(factor_catalog=None)` | Provides `initialize_factors()`, `get_factor_catalog()`, `set_factor_catalog()`, `get_emission_factor()`, `validate_units()`, and `calculate()`; returns rounded CO2e results and factor metadata. |
+| **Class** | **Responsibility** | **Constructor** | **Encapsulation / Relationships** |
+| --------- | ------------------ | --------------- | --------------------------------- |
+| `ActivityRecord` | Represents an enterprise carbon activity, storing its category, activity type, consumption amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | **Encapsulation:** underscore-prefixed attributes with validated getters and setters; `get_period()` derives the reporting period. **Dependency:** supplied to `CalculationService` for calculation. |
+| `EmissionFactor` | Represents a conversion factor associated with an activity category, activity type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | **Encapsulation:** validated getters and setters. **Composition:** created and owned by `CalculationService`; `matches(activity)` checks category, activity type, and unit. |
+| `CalculationService` | Loads the factor catalog, validates units, and calculates CO2e emissions using activity data. | `__init__(factor_catalog=None)` | **Composition:** owns multiple `EmissionFactor` objects. **Dependency:** uses `ActivityRecord` in `calculate(activity)`. Catalog access is encapsulated through getters/setters; results are rounded to two decimals. |
 
 #### Mapping to Capstone Subsystem 2 Architecture
 
