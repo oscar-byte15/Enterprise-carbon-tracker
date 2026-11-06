@@ -14,6 +14,11 @@ from .schemas import (
 )
 from .security import create_access_token, verify_password
 from .store import store
+from .exceptions import (
+    EmailAlreadyRegisteredError,
+    EnterpriseNotFoundError,
+    Subsystem1Error,
+)
 
 router = APIRouter(tags=["Subsystem 1 - Authentication & Enterprise"])
 
@@ -53,7 +58,9 @@ def register(payload: RegisterRequest):
             company_name=payload.company_name,
             industry=payload.industry,
         )
-    except ValueError as exc:
+    except EmailAlreadyRegisteredError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except Subsystem1Error as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
     enterprise = created["enterprise"]
@@ -105,7 +112,9 @@ def update_profile(
 
     try:
         enterprise = store.update_enterprise(enterprise_id, updates)
-    except ValueError as exc:
+    except EnterpriseNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except Subsystem1Error as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
     return EnterpriseProfileResponse(

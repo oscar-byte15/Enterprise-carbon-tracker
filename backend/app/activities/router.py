@@ -6,6 +6,7 @@ from app.dependencies import get_current_enterprise_id
 from .schemas import ActivityCreate
 from .oop import ActivityRecord, CalculationService
 from .mongo_repository import activity_repository
+from .exceptions import Subsystem2Error, ActivityNotFoundError
 
 
 router = APIRouter(
@@ -26,7 +27,7 @@ def prepare_activity(activity: ActivityCreate, enterprise_id: str) -> dict:
             enterprise_id=enterprise_id,
         )
         calculation = CalculationService().calculate(record)
-    except ValueError as error:
+    except (Subsystem2Error, ValueError) as error:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(error)
@@ -78,10 +79,11 @@ def get_activity_by_id(
     )
 
     if activity is None:
+        error = ActivityNotFoundError("Activity not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Activity not found"
-        )
+            detail=str(error)
+        ) from error
 
     return activity
 
@@ -102,10 +104,11 @@ def update_activity(
     )
 
     if updated is None:
+        error = ActivityNotFoundError("Activity not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Activity not found"
-        )
+            detail=str(error)
+        ) from error
 
     return {
         "message": "Activity updated successfully",
@@ -128,10 +131,11 @@ def delete_activity(
     )
 
     if not deleted:
+        error = ActivityNotFoundError("Activity not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Activity not found"
-        )
+            detail=str(error)
+        ) from error
 
     return Response(
         status_code=status.HTTP_204_NO_CONTENT

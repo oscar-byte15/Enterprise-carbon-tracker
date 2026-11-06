@@ -469,3 +469,41 @@ The backend routes are intentionally thin and delegate persistence to the databa
 - Subsystem 1 routes in `backend/app/routes.py` call `store.get_user_by_email()`, `store.create_enterprise()`, `store.get_enterprise()`, `store.update_enterprise()`, `store.list_departments()`, and `store.create_department()`.
 - Subsystem 2 routes in `backend/app/activities/router.py` validate and calculate the activity payload, then pass the result to `activity_repository.create()`, `get_all()`, `get_by_id()`, `update()`, and `delete()`.
 - Subsystem 3 analytics routes do not bypass the repository layer: `backend/app/analytics/service.py` uses `activity_repository.collection.aggregate(...)` to calculate summaries and trends, while the AI advisor also reads enterprise data via `store.get_enterprise()`.
+
+---
+
+## Hometask 4 — Error Handling & Automated Testing
+
+**Submission branch:** `HomeworkAssignment4`. Python backend: **FastAPI + MongoDB**. Automated testing: **pytest + mongomock**.
+
+### Subsystem 1 — Authentication & Enterprise Management
+
+- Custom exception classes: `backend/app/exceptions.py` — `Subsystem1Error`, `EmailAlreadyRegisteredError`, `EnterpriseNotFoundError`.
+- HTTP errors: `backend/app/routes.py` maps duplicate registrations to **409 Conflict** and missing enterprises to **404 Not Found**.
+- Tests: `backend/tests/test_subsystem1_exceptions.py` — **6 tests**.
+
+### Subsystem 2 — Carbon Activity Management & Calculation Engine
+
+**Implemented by Oscar Daniel de la Cruz Jara.**
+
+- Custom exception classes: `backend/app/activities/exceptions.py`.
+  - `Subsystem2Error`: base application exception (subclass of `ValueError` to preserve compatibility).
+  - `InvalidActivityError`: missing or invalid fields, non-positive/non-finite amounts or factors, and mismatched units.
+  - `EmissionFactorNotFoundError`: unknown emission categories or activity types.
+  - `ActivityNotFoundError`: a record does not exist (or is not accessible to the requesting enterprise).
+- Error handling in `backend/app/activities/oop.py`: validation and factor lookup raise specific domain exceptions, retaining their prior messages.
+- HTTP mapping in `backend/app/activities/router.py`: invalid activity data yields **422 Unprocessable Entity** and missing activities yield **404 Not Found**.
+- Test module: `backend/tests/test_subsystem2_exceptions.py`. **15 pytest test cases** (13 test functions, including 3 parameterized invalid amounts), covering exception inheritance, invalid input and unit handling, missing factors, valid calculation, HTTP error mapping, activity creation, and enterprise data isolation.
+
+### Run Hometask 4 Tests
+
+From the `backend/` directory, install development dependencies and run:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py -v
+```
+
+The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
+
+**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.

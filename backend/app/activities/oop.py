@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from .calculator import load_emission_factors
+from .exceptions import InvalidActivityError, EmissionFactorNotFoundError
 
 
 class ActivityRecord:
@@ -26,7 +27,7 @@ class ActivityRecord:
 
     def set_category(self, value):
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Category is required")
+            raise InvalidActivityError("Category is required")
         self._category = value
 
     def get_activity_type(self):
@@ -34,7 +35,7 @@ class ActivityRecord:
 
     def set_activity_type(self, value):
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Activity type is required")
+            raise InvalidActivityError("Activity type is required")
         self._activity_type = value
 
     def get_amount(self):
@@ -44,9 +45,9 @@ class ActivityRecord:
         try:
             amount = Decimal(str(value))
         except Exception as exc:
-            raise ValueError("Amount must be numeric") from exc
+            raise InvalidActivityError("Amount must be numeric") from exc
         if not amount.is_finite() or amount <= 0:
-            raise ValueError("Amount must be a positive finite number")
+            raise InvalidActivityError("Amount must be a positive finite number")
         self._amount = amount
 
     def get_unit(self):
@@ -54,7 +55,7 @@ class ActivityRecord:
 
     def set_unit(self, value):
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Unit is required")
+            raise InvalidActivityError("Unit is required")
         self._unit = value
 
     def get_date(self):
@@ -62,7 +63,7 @@ class ActivityRecord:
 
     def set_date(self, value):
         if not isinstance(value, date):
-            raise ValueError("Date must be a date object")
+            raise InvalidActivityError("Date must be a date object")
         self._date = value
 
     def get_enterprise_id(self):
@@ -70,7 +71,7 @@ class ActivityRecord:
 
     def set_enterprise_id(self, value):
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Enterprise ID is required")
+            raise InvalidActivityError("Enterprise ID is required")
         self._enterprise_id = value
 
     def get_period(self):
@@ -111,9 +112,9 @@ class EmissionFactor:
         try:
             factor = Decimal(str(value))
         except Exception as exc:
-            raise ValueError("Factor must be numeric") from exc
+            raise InvalidActivityError("Factor must be numeric") from exc
         if not factor.is_finite() or factor < 0:
-            raise ValueError("Factor must be finite and non-negative")
+            raise InvalidActivityError("Factor must be finite and non-negative")
         self._factor = factor
 
     def get_unit(self):
@@ -129,7 +130,7 @@ class EmissionFactor:
 
     def set_source(self, value):
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Source is required")
+            raise InvalidActivityError("Source is required")
         self._source = value
 
     def matches(self, activity: ActivityRecord) -> bool:
@@ -156,7 +157,7 @@ class CalculationService:
         if catalog is None:
             self.initialize_factors()
         elif not isinstance(catalog, dict):
-            raise ValueError("Factor catalog must be a dictionary")
+            raise InvalidActivityError("Factor catalog must be a dictionary")
         else:
             self._factor_catalog = {
                 category: {name: dict(data) for name, data in types.items()}
@@ -174,15 +175,15 @@ class CalculationService:
     def get_emission_factor(self, category, activity_type):
         category_factors = self._factor_catalog.get(category)
         if category_factors is None:
-            raise ValueError(f"Unknown category: {category}")
+            raise EmissionFactorNotFoundError(f"Unknown category: {category}")
         data = category_factors.get(activity_type)
         if data is None:
-            raise ValueError(f"Unknown activity type: {activity_type}")
+            raise EmissionFactorNotFoundError(f"Unknown activity type: {activity_type}")
         return self._factors[(category, activity_type)]
 
     def validate_units(self, activity: ActivityRecord, factor: EmissionFactor):
         if not factor.matches(activity):
-            raise ValueError("Activity category, type or unit does not match emission factor")
+            raise InvalidActivityError("Activity category, type or unit does not match emission factor")
 
     def calculate(self, activity: ActivityRecord):
         factor = self.get_emission_factor(activity.get_category(),
