@@ -143,6 +143,7 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 
 ### Team Overview
 
+
 | Team member | Assigned subsystem | Implementation |
 |---|---|---|
 | Xiangping Kong | Subsystem 1 — Authentication & Enterprise Management | [Three OOP classes (User, Enterprise, Department), UML and unit tests](#subsystem-1--user-authentication--enterprise-management-oop-implementation) |
@@ -359,6 +360,37 @@ This subsystem manages enterprise carbon activity records, emission factor confi
 - **Class relationships:** `CalculationService` uses an `ActivityRecord` and a matching `EmissionFactor` to calculate emissions, rather than owning the activity record.
 
 **Implementation note:** These classes are integrated into the existing FastAPI activity create/update workflow in `backend/app/activities/router.py`. MongoDB persistence is handled separately by `MongoActivityRepository`.
+
+### Subsystem 2 — Carbon Activity Management & Calculation Engine (OOP Implementation)
+
+The Subsystem 2 OOP implementation is located in `backend/app/activities/oop.py`.
+
+This subsystem manages enterprise carbon activity records, validates activity measurements, and calculates greenhouse gas emissions using domain-specific emission factors. Three OOP classes have been implemented to represent the core entities and calculation logic of Subsystem 2.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Methods |
+|---|---|---|---|
+| `ActivityRecord` | Represents an enterprise carbon activity, including its category, activity type, measured amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | Uses protected-style attributes (`_category`, `_activity_type`, `_amount`, `_unit`, `_date`, `_enterprise_id`) with getter/setter methods. Validates required fields, positive finite amounts, and dates. Provides `get_period()` for monthly reporting. |
+| `EmissionFactor` | Encapsulates a domain-specific emission factor associated with an activity category, type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | Uses protected-style attributes and getter/setter methods to validate emission factor information. Provides `matches(activity)` to verify compatibility with an `ActivityRecord`. |
+| `CalculationService` | Coordinates emission calculations, manages emission factors, validates activity units, and calculates CO2e emissions using the configured factor catalog. | `__init__(factor_catalog=None)` | Encapsulates the factor catalog and its `EmissionFactor` objects. Provides `initialize_factors()`, `get_factor_catalog()`, `set_factor_catalog()`, `get_emission_factor()`, `validate_units()`, and `calculate()`. Uses Decimal arithmetic for reliable calculations. |
+
+#### Mapping to Capstone Subsystem 2 Architecture
+
+- **`ActivityRecord`:** Represents operational activity data managed through the Carbon Activity Management module, including electricity, heating, transport, and waste activities. It corresponds to the activity creation, editing, and history features of the Capstone.
+- **`EmissionFactor`:** Represents the emission factor configuration used to convert activity measurements into kilograms of CO2 equivalent. Factors are loaded from the existing emission factor catalog.
+- **`CalculationService`:** Implements the carbon calculation logic used by Subsystem 2. It validates activity units, selects the appropriate emission factor, and calculates emissions for enterprise activity records.
+
+#### OOP Concepts Applied
+
+- **Constructors:** All three classes implement `__init__()` to initialize their attributes and required dependencies.
+- **Encapsulation:** Attributes use a leading underscore, with getter and setter methods providing controlled access to object data.
+- **Data validation:** `ActivityRecord` validates activity measurements, while `EmissionFactor` validates emission factor values and required information.
+- **Composition:** `CalculationService` creates and owns its `EmissionFactor` objects. The UML relationship is `CalculationService "1" *-- "0..*" EmissionFactor`.
+- **Dependency:** `CalculationService` receives and processes `ActivityRecord` objects through its `calculate()` method without owning their lifecycle.
+- **Precision:** The calculation engine uses Python's `Decimal` and `ROUND_HALF_UP` to produce emissions rounded to two decimal places.
+
+**Implementation note:** The classes are implemented in the existing Subsystem 2 backend module and are aligned with its carbon activity calculation logic. The FastAPI endpoints and MongoDB repository remain separate from the OOP domain classes.
 
 ### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
 
@@ -637,118 +669,56 @@ The streaming pipeline filters operational activity records by GHG Protocol scop
 
 ```mermaid
 classDiagram
-    direction TB
-
-    class StreamProcessor {
-        <<abstract>>
-        +process(event: dict) dict | None*
-        +__or__(other: StreamProcessor) ProcessingPipeline
-        +__add__(other: StreamProcessor) ProcessingPipeline
-        +run(stream) Generator
+    class ValueError {
+        <<Python Standard Library>>
+    }
+    class Subsystem3Error {
+        <<Base Exception>>
+    }
+    class InvalidMetricError {
+        +negative or non-finite CO2e
+        +out-of-range percentage
+        +invalid category
+        +invalid activity count
+    }
+    class InvalidDatePeriodError {
+        +malformed YYYY-MM
+        +month outside 01-12
+        +year outside 2000-2100
+    }
+    class AnalyticsAggregationError {
+        +empty enterprise ID
+        +malformed metrics dict
+        +pipeline aggregation failure
+    }
+    class InsufficientDataError {
+        +zero activities when required
+        +missing telemetry for period
+    }
+    class AIAdvisorError {
+        +invalid advisor mode
+        +invalid recommendations config
+        +unrecoverable advisor failure
     }
 
-    class ScopeFilter {
-        +VALID_SCOPES: set
-        -_allowed_scopes: set
-        +__init__(allowed_scopes: set)
-        +get_allowed_scopes() set
-        +process(event: dict) dict | None
-    }
-
-    class FlightTelemetryProcessor {
-        +BASE_FACTORS: dict
-        +CABIN_MULTIPLIERS: dict
-        +process(event: dict) dict
-    }
-
-    class DataCenterTelemetryProcessor {
-        +DEFAULT_GRID_FACTOR: Decimal
-        +DEFAULT_PUE: Decimal
-        +process(event: dict) dict
-    }
-
-    class FreightTelemetryProcessor {
-        +MODE_FACTORS: dict
-        +process(event: dict) dict
-    }
-
-    class ProcessingPipeline {
-        -_processors: list
-        +__init__(processors: list)
-        +get_processors() list
-        +__or__(other: StreamProcessor) ProcessingPipeline
-        +__add__(other: StreamProcessor) ProcessingPipeline
-        +process(event: dict) dict | None
-        +run(stream) Generator
-    }
-
-    class TelemetryStream {
-        -_events: Iterator
-        +__init__(events)
-        +__iter__() TelemetryStream
-        +__next__() dict
-    }
-
-    StreamProcessor <|-- ScopeFilter
-    StreamProcessor <|-- FlightTelemetryProcessor
-    StreamProcessor <|-- DataCenterTelemetryProcessor
-    StreamProcessor <|-- FreightTelemetryProcessor
-    StreamProcessor <|-- ProcessingPipeline
-
-    ProcessingPipeline "1" *-- "1..*" StreamProcessor : composes
-    ProcessingPipeline ..> TelemetryStream : consumes
+    ValueError <|-- Subsystem3Error
+    Subsystem3Error <|-- InvalidMetricError
+    Subsystem3Error <|-- InvalidDatePeriodError
+    Subsystem3Error <|-- AnalyticsAggregationError
+    Subsystem3Error <|-- InsufficientDataError
+    Subsystem3Error <|-- AIAdvisorError
 ```
 
-#### Mapping to Required OOP Concepts
+### Run Hometask 4 Tests
 
-1. **Abstract Base Classes (ABCs):**
-   `StreamProcessor` inherits from Python's `abc.ABC` and defines the abstract contract `@abstractmethod def process(self, event: dict) -> dict | None`.
-2. **Inheritance & Polymorphism:**
-   `ScopeFilter`, `FlightTelemetryProcessor`, `DataCenterTelemetryProcessor`, `FreightTelemetryProcessor`, and `ProcessingPipeline` inherit from `StreamProcessor` and polymorphically implement `process()` to transform distinct telemetry schemas.
-3. **Operator Overloading:**
-   `StreamProcessor` and `ProcessingPipeline` implement both `__or__()` (`|`) and `__add__()` (`+`), enabling expressive, declarative pipeline composition:
-   ```python
-   pipeline = scope_filter | flight_processor | datacenter_processor + freight_processor
-   ```
-4. **Iterators & Generators:**
-   `TelemetryStream` implements the standard iterator protocol with `__iter__()` and `__next__()`. `ProcessingPipeline.run()` lazily processes telemetry events using a generator with `yield`.
-
-#### Processing Example
-
-```python
-pipeline = (
-    ScopeFilter({"Scope 2", "Scope 3"})
-    | FlightTelemetryProcessor()
-    | DataCenterTelemetryProcessor()
-)
-
-stream = TelemetryStream(telemetry_events)
-for record in pipeline.run(stream):
-    print(f"{record['telemetry_type'].upper()}: {record['co2e_tons']:.6f} tCO2e")
-```
-
-#### Run Automated Tests
-
-From the `backend` directory:
+From the `backend/` directory, install development dependencies and run:
 
 ```bash
-# Run Subsystem 2 tests
-python -m pytest tests/test_subsystem2_homeassignment2.py -v
-
-# Run Subsystem 3 tests
-python -m pytest tests/test_subsystem3_homeassignment2.py -v
-
-# Run all Hometask 2 tests
-python -m pytest tests/test_subsystem2_homeassignment2.py tests/test_subsystem3_homeassignment2.py -v
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py tests/test_subsystem3_exceptions.py -v
 ```
 
-#### Run Interactive Demonstration
-
-```bash
-cd backend
-python demo_subsystem3_homeassignment2.py
-```
-
+The three Hometask 4 modules define **65 test cases** in total (6 for Subsystem 1, 15 for Subsystem 2, and 44 for Subsystem 3). The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
 ### Team Video Presentation
 

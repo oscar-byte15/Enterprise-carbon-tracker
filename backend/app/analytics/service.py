@@ -4,12 +4,49 @@ from typing import Any
 from pymongo.collection import Collection
 
 from app.activities.mongo_repository import activity_repository
+from .exceptions import (
+    AnalyticsAggregationError,
+    InsufficientDataError,
+    InvalidDatePeriodError,
+)
 from .schemas import (
     AnalyticsSummaryResponse,
     AnalyticsTrendsResponse,
     CategoryBreakdownItem,
     MonthlyTrendItem,
 )
+
+
+def validate_enterprise_id(enterprise_id: str) -> str:
+    """Validate enterprise ID format and presence."""
+    if not isinstance(enterprise_id, str) or not enterprise_id.strip():
+        raise AnalyticsAggregationError("Enterprise ID is required and cannot be empty")
+    return enterprise_id.strip()
+
+
+def validate_period(period: str | None) -> str | None:
+    """Validate period parameter in YYYY-MM format with valid month (01-12)."""
+    if period is None:
+        return None
+    if not isinstance(period, str) or not period.strip():
+        raise InvalidDatePeriodError("Period must be a non-empty string in YYYY-MM format")
+    clean = period.strip()
+    parts = clean.split("-")
+    if len(parts) != 2 or len(parts[0]) != 4 or len(parts[1]) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
+        raise InvalidDatePeriodError(f"Invalid period format '{period}': expected YYYY-MM (e.g. 2026-11)")
+    month = int(parts[1])
+    if month < 1 or month > 12:
+        raise InvalidDatePeriodError(f"Invalid month in period '{period}': month must be between 01 and 12")
+    return clean
+
+
+def validate_year(year: int | None) -> int | None:
+    """Validate year parameter (2000-2100)."""
+    if year is None:
+        return None
+    if not isinstance(year, int) or isinstance(year, bool) or year < 2000 or year > 2100:
+        raise InvalidDatePeriodError(f"Invalid year '{year}': must be an integer between 2000 and 2100")
+    return year
 
 
 class AnalyticsService:
@@ -23,11 +60,17 @@ class AnalyticsService:
         return activity_repository.collection
 
     def get_summary(
-        self, enterprise_id: str, period: str | None = None
+        self,
+        enterprise_id: str,
+        period: str | None = None,
+        require_data: bool = False,
     ) -> AnalyticsSummaryResponse:
-        match_filter: dict[str, Any] = {"enterprise_id": enterprise_id}
-        if period:
-            match_filter["period"] = period
+        ent_id = validate_enterprise_id(enterprise_id)
+        clean_period = validate_period(period)
+
+        match_filter: dict[str, Any] = {"enterprise_id": ent_id}
+        if clean_period:
+            match_filter["period"] = clean_period
 
         pipeline = [
             {"$match": match_filter},
@@ -41,7 +84,16 @@ class AnalyticsService:
             {"$sort": {"total_co2e": -1}},
         ]
 
-        results = list(self.collection.aggregate(pipeline))
+        try:
+            results = list(self.collection.aggregate(pipeline))
+        except Exception as exc:
+            raise AnalyticsAggregationError(f"Analytics aggregation failed: {exc}") from exc
+
+        if require_data and not results:
+            raise InsufficientDataError(
+                f"Insufficient activity data for enterprise '{ent_id}'"
+                + (f" in period '{clean_period}'" if clean_period else "")
+            )
 
         total_co2e = sum(item.get("total_co2e", 0.0) for item in results)
         total_activities = sum(item.get("activity_count", 0) for item in results)
@@ -69,8 +121,8 @@ class AnalyticsService:
         )
 
         return AnalyticsSummaryResponse(
-            enterprise_id=enterprise_id,
-            period=period,
+            enterprise_id=ent_id,
+            period=clean_period,
             total_co2e_kg=round(float(total_co2e), 2),
             total_activities=total_activities,
             top_category=top_category,
@@ -79,11 +131,17 @@ class AnalyticsService:
         )
 
     def get_trends(
-        self, enterprise_id: str, year: int | None = None
+        self,
+        enterprise_id: str,
+        year: int | None = None,
+        require_data: bool = False,
     ) -> AnalyticsTrendsResponse:
-        match_filter: dict[str, Any] = {"enterprise_id": enterprise_id}
-        if year is not None:
-            match_filter["period"] = {"$regex": f"^{year}-"}
+        ent_id = validate_enterprise_id(enterprise_id)
+        clean_year = validate_year(year)
+
+        match_filter: dict[str, Any] = {"enterprise_id": ent_id}
+        if clean_year is not None:
+            match_filter["period"] = {"$regex": f"^{clean_year}-"}
 
         pipeline = [
             {"$match": match_filter},
@@ -100,7 +158,10 @@ class AnalyticsService:
             {"$sort": {"_id.period": 1}},
         ]
 
-        results = list(self.collection.aggregate(pipeline))
+        try:
+            results = list(self.collection.aggregate(pipeline))
+        except Exception as exc:
+            raise AnalyticsAggregationError(f"Analytics trend aggregation failed: {exc}") from exc
 
         period_data: dict[str, dict[str, Any]] = {}
         for item in results:
@@ -131,9 +192,15 @@ class AnalyticsService:
             for p, data in sorted(period_data.items(), key=lambda x: x[0])
         ]
 
+        if require_data and not trends:
+            raise InsufficientDataError(
+                f"Insufficient activity data for enterprise '{ent_id}'"
+                + (f" in year {clean_year}" if clean_year else "")
+            )
+
         return AnalyticsTrendsResponse(
-            enterprise_id=enterprise_id,
-            year=year,
+            enterprise_id=ent_id,
+            year=clean_year,
             trends=trends,
         )
 

@@ -11,6 +11,7 @@ from app.config import settings
 from app.services.openai_service import OpenAIService
 from app.store import store
 from .ai_schemas import AIRecommendationsResponse, RecommendationItem
+from .exceptions import AIAdvisorError, InsufficientDataError
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,13 @@ FALLBACK_CATALOG: dict[str, list[dict[str, str]]] = {
 class AIAdvisorService:
     def __init__(self, openai_service: OpenAIService | None = None) -> None:
         self.openai_service = openai_service or OpenAIService()
+        self.max_recommendations = 3
+
+    def configure(self, max_recommendations: int = 3) -> None:
+        """Configure AI Advisor operational parameters."""
+        if not isinstance(max_recommendations, int) or isinstance(max_recommendations, bool) or max_recommendations <= 0:
+            raise AIAdvisorError("max_recommendations must be a positive integer")
+        self.max_recommendations = max_recommendations
 
     def _normalize_impact(self, val: str | None) -> str:
         s = (val or "").strip().lower()
@@ -159,13 +167,24 @@ class AIAdvisorService:
             return None
 
     def generate_recommendations(
-        self, enterprise_id: str
+        self,
+        enterprise_id: str,
+        require_data: bool = False,
     ) -> AIRecommendationsResponse:
         """
         Generate concise, dashboard-friendly carbon reduction recommendations.
-        Limits output to at most 3 cards.
+        Limits output to at most configured cards.
         """
+        if not isinstance(enterprise_id, str) or not enterprise_id.strip():
+            raise AIAdvisorError("Enterprise ID is required and cannot be empty")
+
         summary = analytics_service.get_summary(enterprise_id=enterprise_id)
+
+        if require_data and summary.total_activities == 0:
+            raise InsufficientDataError(
+                f"Insufficient activity data for enterprise '{enterprise_id}' to generate recommendations"
+            )
+
         enterprise = store.get_enterprise(enterprise_id) or {}
         company_name = str(enterprise.get("company_name") or "Enterprise")
         industry = str(enterprise.get("industry") or "General Operations")

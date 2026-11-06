@@ -9,6 +9,12 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
+from .exceptions import (
+    AIAdvisorError,
+    AnalyticsAggregationError,
+    InvalidMetricError,
+)
+
 
 class EmissionMetric:
     """Represents an aggregated emission metric used by the Analytics Dashboard."""
@@ -30,7 +36,7 @@ class EmissionMetric:
 
     def set_category(self, value: str) -> None:
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Category is required and cannot be empty")
+            raise InvalidMetricError("Category is required and cannot be empty")
         self._category = value.strip()
 
     def get_co2e_kg(self) -> float:
@@ -40,9 +46,9 @@ class EmissionMetric:
         try:
             val = Decimal(str(value))
         except Exception as exc:
-            raise ValueError("CO2e emissions must be numeric") from exc
+            raise InvalidMetricError("CO2e emissions must be numeric") from exc
         if not val.is_finite() or val < 0:
-            raise ValueError("CO2e emissions cannot be negative")
+            raise InvalidMetricError("CO2e emissions cannot be negative")
         self._co2e_kg = val
 
     def get_percentage(self) -> float:
@@ -52,9 +58,9 @@ class EmissionMetric:
         try:
             val = Decimal(str(value))
         except Exception as exc:
-            raise ValueError("Percentage must be numeric") from exc
+            raise InvalidMetricError("Percentage must be numeric") from exc
         if not val.is_finite() or val < 0 or val > 100:
-            raise ValueError("Percentage must be between 0 and 100")
+            raise InvalidMetricError("Percentage must be between 0 and 100")
         self._percentage = val
 
     def get_activity_count(self) -> int:
@@ -62,9 +68,9 @@ class EmissionMetric:
 
     def set_activity_count(self, value: int) -> None:
         if not isinstance(value, int) or isinstance(value, bool):
-            raise ValueError("Activity count must be an integer")
+            raise InvalidMetricError("Activity count must be an integer")
         if value < 0:
-            raise ValueError("Activity count cannot be negative")
+            raise InvalidMetricError("Activity count cannot be negative")
         self._activity_count = value
 
     def to_dict(self) -> dict[str, Any]:
@@ -106,7 +112,7 @@ class AnalyticsEngine:
 
     def set_enterprise_id(self, value: str) -> None:
         if not isinstance(value, str) or not value.strip():
-            raise ValueError("Enterprise ID is required and cannot be empty")
+            raise AnalyticsAggregationError("Enterprise ID is required and cannot be empty")
         self._enterprise_id = value.strip()
 
     def get_total_co2e_kg(self) -> float:
@@ -118,7 +124,7 @@ class AnalyticsEngine:
 
     def set_metrics(self, metrics: dict[str, Any]) -> None:
         if not isinstance(metrics, dict):
-            raise ValueError("Metrics must be a dictionary")
+            raise AnalyticsAggregationError("Metrics must be a dictionary")
         self.initialize_metrics()
         for cat, metric in metrics.items():
             if isinstance(metric, EmissionMetric):
@@ -131,7 +137,7 @@ class AnalyticsEngine:
                 self._metrics[cat] = EmissionMetric(cat, amt, pct, count)
                 self._total_co2e_kg += self._metrics[cat]._co2e_kg
             else:
-                raise ValueError("Metric entries must be EmissionMetric or dict instances")
+                raise AnalyticsAggregationError("Metric entries must be EmissionMetric or dict instances")
         self.recalculate_percentages()
 
     def add_metric(
@@ -142,15 +148,15 @@ class AnalyticsEngine:
     ) -> None:
         """Add emissions to a category, creating or updating an owned EmissionMetric."""
         if not isinstance(category, str) or not category.strip():
-            raise ValueError("Category is required")
+            raise InvalidMetricError("Category is required")
         try:
             amt = Decimal(str(co2e_kg))
         except Exception as exc:
-            raise ValueError("CO2e emissions must be numeric") from exc
+            raise InvalidMetricError("CO2e emissions must be numeric") from exc
         if not amt.is_finite() or amt < 0:
-            raise ValueError("CO2e emissions cannot be negative")
+            raise InvalidMetricError("CO2e emissions cannot be negative")
         if not isinstance(count, int) or isinstance(count, bool) or count < 0:
-            raise ValueError("Activity count must be a non-negative integer")
+            raise InvalidMetricError("Activity count must be a non-negative integer")
 
         cat_clean = category.strip()
         if cat_clean in self._metrics:
@@ -313,10 +319,10 @@ class SustainabilityAdvisor:
 
     def set_advisor_mode(self, mode: str) -> None:
         if not isinstance(mode, str) or not mode.strip():
-            raise ValueError("Advisor mode is required")
+            raise AIAdvisorError("Advisor mode is required")
         clean_mode = mode.strip().lower()
         if clean_mode not in ("rules", "ai"):
-            raise ValueError("Advisor mode must be 'rules' or 'ai'")
+            raise AIAdvisorError("Advisor mode must be 'rules' or 'ai'")
         self._advisor_mode = clean_mode
 
     def get_catalog(self) -> dict[str, list[dict[str, str]]]:
@@ -330,7 +336,7 @@ class SustainabilityAdvisor:
         if catalog is None:
             self.initialize_catalog()
         elif not isinstance(catalog, dict):
-            raise ValueError("Catalog must be a dictionary")
+            raise AIAdvisorError("Catalog must be a dictionary")
         else:
             self._catalog = {k: [dict(item) for item in v] for k, v in catalog.items()}
 
@@ -340,7 +346,7 @@ class SustainabilityAdvisor:
     ) -> list[dict[str, str]]:
         """Generate targeted recommendations based on top emitting category from analytics."""
         if not isinstance(analytics, AnalyticsEngine):
-            raise ValueError("analytics must be an instance of AnalyticsEngine")
+            raise AIAdvisorError("analytics must be an instance of AnalyticsEngine")
 
         top_cat = analytics.get_top_category()
         key = (top_cat or "general").lower()
