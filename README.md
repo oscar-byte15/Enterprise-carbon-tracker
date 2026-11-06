@@ -1,3 +1,14 @@
+# Enterprise Carbon Footprint Tracker & AI Assistant
+
+**FH Dortmund — Master Digital Transformation**  
+**Compact Programming Course — Hometask Assignments**
+
+## 🎥 Project Video Presentation
+
+**[▶ Watch Our Team Presentation on Google Drive](https://drive.google.com/file/d/1KW9YBkFFk_YKnRE3nSJbLDVhMkl2JuRP/view)**
+
+The video presents our Enterprise Carbon Footprint Tracker & AI Assistant project, including the implementation and architecture of its three subsystems.
+
 ## Running the Project with Docker Compose
 
 This project supports Docker Compose to simplify the setup and execution of the Enterprise Carbon Tracker application.
@@ -144,11 +155,13 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 ### Team Overview
 
 
-| Team member | Assigned subsystem | Implementation |
-|---|---|---|
-| Xiangping Kong | Subsystem 1 — Authentication & Enterprise Management | [Three OOP classes (User, Enterprise, Department), UML and unit tests](#subsystem-1--user-authentication--enterprise-management-oop-implementation) |
-| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes (ActivityRecord, EmissionFactor, CalculationService) and UML](#subsystem-2--carbon-activity-management--calculation-engine) |
-| Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
+
+| Team Member | Matriculation Number (Matrikelnummer) | Assigned Subsystem | Implementation |
+|---|---|---|---|
+| Xiangping Kong | 7226940 | Subsystem 1 — Authentication & Enterprise Management | [Three OOP classes (User, Enterprise, Department), UML and unit tests](#subsystem-1--user-authentication--enterprise-management-oop-implementation) |
+| Oscar Daniel de la Cruz Jara | 7226240 | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes (ActivityRecord, EmissionFactor, CalculationService) and UML](#subsystem-2--carbon-activity-management--calculation-engine) |
+| Usama Rasheed | 7227033 | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
+
 
 ### System Design — UML Diagrams
 
