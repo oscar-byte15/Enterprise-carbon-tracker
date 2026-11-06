@@ -508,3 +508,209 @@ python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_excep
 The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
 **Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
+
+
+---
+
+## Hometask 2 — Real-Time Data Processing
+
+### Project Overview
+
+**Project:** Enterprise Carbon Footprint Tracker & AI Assistant
+
+**Submission Branch:** `HomeworkAssignment2`
+
+This assignment implements an event-driven stream processing
+framework in Python using Object-Oriented Programming (OOP).
+
+The framework filters operational carbon activities by
+GHG emission scope (Scope 1, Scope 2, and Scope 3) and
+transforms valid activity measurements into metric tons
+of CO2 equivalent (CO2e).
+
+### Subsystem 2 — Carbon Activity Streaming Pipeline
+
+**Implemented by:** Oscar Daniel de la Cruz Jara
+
+**Source Code:**
+`backend/app/activities/subsystem2_homeassignment2.py`
+
+**Automated Tests:**
+`backend/tests/test_subsystem2_homeassignment2.py`
+
+### Implemented Classes
+
+| Class | Responsibility | OOP Concept |
+|---|---|---|
+| `StreamProcessor` | Defines the abstract processing interface. | Abstract Base Class |
+| `ScopeFilter` | Filters events according to emission scope. | Inheritance & Polymorphism |
+| `EmissionTransformer` | Converts activity metrics into metric tons of CO2e. | Inheritance & Polymorphism |
+| `ProcessingPipeline` | Composes and executes stream processors. | Operator Overloading & Generators |
+| `EventStream` | Iterates through incoming activity events. | Iterators |
+
+### UML Class Diagram — Subsystem 2
+
+```mermaid
+classDiagram
+    direction TB
+
+    class StreamProcessor {
+        <<abstract>>
+        +process(event: dict) dict | None*
+        +__or__(other: StreamProcessor) ProcessingPipeline
+    }
+
+    class ScopeFilter {
+        +VALID_SCOPES: set
+        -_allowed_scopes: set
+        +__init__(allowed_scopes: set)
+        +process(event: dict) dict | None
+    }
+
+    class EmissionTransformer {
+        -_calculation_service: CalculationService
+        +__init__(calculation_service=None)
+        +process(event: dict) dict
+    }
+
+    class ProcessingPipeline {
+        -_processors: list
+        +__init__(processors: list)
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +process(event: dict) dict | None
+        +run(stream) Generator
+    }
+
+    class EventStream {
+        -_events: Iterator
+        +__init__(events)
+        +__iter__() EventStream
+        +__next__() dict
+    }
+
+    class ActivityRecord {
+        -_category: str
+        -_activity_type: str
+        -_amount: Decimal
+        -_unit: str
+        -_date: date
+        -_enterprise_id: str
+        +__init__(category, activity_type, amount, unit, activity_date, enterprise_id)
+        +get_category()
+        +set_category(value)
+        +get_activity_type()
+        +set_activity_type(value)
+        +get_amount()
+        +set_amount(value)
+        +get_unit()
+        +set_unit(value)
+        +get_date()
+        +set_date(value)
+        +get_enterprise_id()
+        +set_enterprise_id(value)
+        +get_period()
+    }
+
+    class CalculationService {
+        -_factor_catalog: dict
+        -_factors: dict
+        +__init__(factor_catalog=None)
+        +initialize_factors()
+        +get_factor_catalog()
+        +set_factor_catalog(catalog)
+        +get_emission_factor(category, activity_type)
+        +validate_units(activity, factor)
+        +calculate(activity)
+    }
+
+    class EmissionFactor {
+        -_category: str
+        -_activity_type: str
+        -_factor: Decimal
+        -_unit: str
+        -_source: str
+        +__init__(category, activity_type, factor, unit, source)
+        +get_category()
+        +set_category(value)
+        +get_activity_type()
+        +set_activity_type(value)
+        +get_factor()
+        +set_factor(value)
+        +get_unit()
+        +set_unit(value)
+        +get_source()
+        +set_source(value)
+        +matches(activity)
+    }
+
+    StreamProcessor <|-- ScopeFilter
+    StreamProcessor <|-- EmissionTransformer
+    StreamProcessor <|-- ProcessingPipeline
+
+    ProcessingPipeline "0..*" o-- "1..*" StreamProcessor : aggregates
+    EmissionTransformer "0..*" --> "1" CalculationService : references
+
+    EmissionTransformer ..> ActivityRecord : creates
+    ProcessingPipeline ..> EventStream : consumes
+    CalculationService "1" *-- "0..*" EmissionFactor : owns
+    CalculationService ..> ActivityRecord : calculates
+```
+
+### OOP Concepts Applied
+
+**1. Abstract Base Classes**
+
+`StreamProcessor` inherits from Python's `ABC` and declares
+`process()` using `@abstractmethod`.
+
+**2. Inheritance and Polymorphism**
+
+`ScopeFilter`, `EmissionTransformer`, and `ProcessingPipeline`
+inherit from `StreamProcessor` and implement `process()`
+with different behaviors.
+
+**3. Operator Overloading**
+
+The `__or__()` method allows processors to be composed
+using the `|` operator.
+
+**4. Iterators and Generators**
+
+`EventStream` implements `__iter__()` and `__next__()`,
+while `ProcessingPipeline.run()` uses `yield` for lazy
+event processing.
+
+### Processing Example
+
+```python
+pipeline = (
+    ScopeFilter({"Scope 2"})
+    | EmissionTransformer()
+)
+
+for result in pipeline.run(EventStream(events)):
+    print(result["co2e_tons"])
+```
+
+For an electricity activity of 100 kWh with an emission
+factor of 0.352 kg CO2e/kWh, the result is:
+
+```text
+0.0352 metric tons CO2e
+```
+
+### Run Automated Tests
+
+From the `backend` directory:
+
+```bash
+python -m pytest tests/test_subsystem2_homeassignment2.py -v
+```
+
+### Team Video Presentation
+
+**Duration:** 5 minutes
+
+**Video Link:** Pending team recording.
+Replace this placeholder with the direct video link
+before submission.
