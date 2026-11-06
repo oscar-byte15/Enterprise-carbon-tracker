@@ -16,11 +16,11 @@ import pytest
 
 from app.analytics.ai_advisor import AIAdvisorService
 from app.analytics.service import AnalyticsService
-from app.store import store
-
+#from app.store import store
+from app.store import InMemoryStore
 
 @pytest.fixture
-def test_setup():
+def test_setup(monkeypatch):
     """Setup isolated MongoMock collection and custom services."""
     client = mongomock.MongoClient()
     collection = client["test_carbon_tracker"]["activity_records"]
@@ -32,7 +32,12 @@ def test_setup():
     mock_openai.model = "gpt-4o-mini"
 
     advisor_svc = AIAdvisorService(openai_service=mock_openai)
+    store = InMemoryStore()
 
+    monkeypatch.setattr(
+        "app.analytics.ai_advisor.store",
+        store,
+    )
     store.create_enterprise(
         email="test_concise_ai@example.com",
         password="Password123",
