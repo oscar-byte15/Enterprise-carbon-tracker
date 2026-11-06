@@ -334,31 +334,31 @@ This subsystem focuses on user account information, enterprise profiles, and dep
 
 The Subsystem 2 OOP implementation is located in `backend/app/activities/oop.py`.
 
-This subsystem manages enterprise carbon activity data, emission factor configurations, and CO2e calculations. Three OOP classes implement the domain model and are used by the existing FastAPI activity creation and update pipeline.
+This subsystem manages enterprise carbon activity records, emission factor configurations, and CO2e calculations. Three OOP classes implement the domain model and support the FastAPI activity creation and update workflow.
 
 #### Three Implemented Classes
 
-| **Class** | **Responsibility** | **Constructor** | **Encapsulation / Relationships** |
-| --------- | ------------------ | --------------- | --------------------------------- |
-| `ActivityRecord` | Represents an enterprise carbon activity, storing its category, activity type, consumption amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | **Encapsulation:** underscore-prefixed attributes with validated getters and setters; `get_period()` derives the reporting period. **Dependency:** supplied to `CalculationService` for calculation. |
-| `EmissionFactor` | Represents a conversion factor associated with an activity category, activity type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | **Encapsulation:** validated getters and setters. **Composition:** created and owned by `CalculationService`; `matches(activity)` checks category, activity type, and unit. |
-| `CalculationService` | Loads the factor catalog, validates units, and calculates CO2e emissions using activity data. | `__init__(factor_catalog=None)` | **Composition:** owns multiple `EmissionFactor` objects. **Dependency:** uses `ActivityRecord` in `calculate(activity)`. Catalog access is encapsulated through getters/setters; results are rounded to two decimals. |
+| **Class** | **Responsibility** | **Constructor** | **Encapsulation / Methods** |
+| --------- | ------------------ | --------------- | --------------------------- |
+| `ActivityRecord` | Represents an enterprise carbon activity, storing its category, activity type, amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | Uses underscore-prefixed attributes with getters and validated setters; `get_period()` derives the reporting period. |
+| `EmissionFactor` | Represents the conversion factor associated with an activity category, type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | Provides validated getters and setters; `matches(activity)` checks whether a factor matches an activity. |
+| `CalculationService` | Loads and manages emission factors, validates units, and calculates CO2e emissions. | `__init__(factor_catalog=None)` | Provides `initialize_factors()`, `get_factor_catalog()`, `set_factor_catalog()`, `get_emission_factor()`, `validate_units()`, and `calculate()`. |
 
 #### Mapping to Capstone Subsystem 2 Architecture
 
-- **`ActivityRecord`:** Represents the validated activity data submitted through `POST /activities/` or `PUT /activities/{activity_id}`. Its fields are used for emission calculation and eventual database persistence.
-- **`EmissionFactor`:** Represents a configured conversion factor used to convert a specific activity amount into CO2e; the factor catalog is loaded from `backend/app/activities/emission_factors.json`.
-- **`CalculationService`:** Performs category/type lookup, unit validation, and CO2e calculations before the API writes the prepared activity to MongoDB through `MongoActivityRepository`.
+- **`ActivityRecord`:** Represents activity data validated and prepared during FastAPI create/update requests.
+- **`EmissionFactor`:** Represents a category-specific emission factor loaded from the configured JSON catalog and used during CO2e calculations.
+- **`CalculationService`:** Implements the calculation engine used by `POST /activities/` and `PUT /activities/{activity_id}` before the processed records are persisted through the MongoDB repository.
 
 #### OOP Concepts Applied
 
-- **Constructors:** All three classes use `__init__()` for initialization and configuration.
-- **Encapsulation:** Underscore-prefixed attributes are accessed and updated using getter and setter methods, including validation.
-- **Data validation:** `ActivityRecord.set_amount()` rejects non-numeric, non-finite, and non-positive amounts; `EmissionFactor.set_factor()` rejects negative or non-finite factors.
-- **Composition:** `CalculationService` creates and owns its `EmissionFactor` instances based on the factor catalog.
-- **Object collaboration:** `CalculationService.calculate(activity)` uses an `ActivityRecord` and its matching `EmissionFactor` to calculate CO2e, rounding the result to two decimal places.
+- **Constructors:** Each class uses `__init__()` to initialize state.
+- **Encapsulation:** Attributes use a leading underscore, with getter and setter methods providing controlled access.
+- **Data validation:** Setters reject missing fields, non-positive amounts, negative factors, and invalid dates or units.
+- **Composition:** `CalculationService` creates and owns its `EmissionFactor` objects.
+- **Class relationships:** `CalculationService` uses an `ActivityRecord` and a matching `EmissionFactor` to calculate emissions, rather than owning the activity record.
 
-**Implementation note:** The OOP classes are integrated into the existing FastAPI create/update flow in `backend/app/activities/router.py`. MongoDB persistence remains encapsulated in `backend/app/activities/mongo_repository.py`.
+**Implementation note:** These classes are integrated into the existing FastAPI activity create/update workflow in `backend/app/activities/router.py`. MongoDB persistence is handled separately by `MongoActivityRepository`.
 
 ### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
 
@@ -485,6 +485,7 @@ The backend routes are intentionally thin and delegate persistence to the databa
 ### Subsystem 2 — Carbon Activity Management & Calculation Engine
 
 **Implemented by Oscar Daniel de la Cruz Jara.**
+
 
 - Custom exception classes: `backend/app/activities/exceptions.py`.
   - `Subsystem2Error`: base application exception (subclass of `ValueError` to preserve compatibility).
