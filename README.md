@@ -704,8 +704,162 @@ factor of 0.352 kg CO2e/kWh, the result is:
 From the `backend` directory:
 
 ```bash
+# Run Subsystem 2 tests
 python -m pytest tests/test_subsystem2_homeassignment2.py -v
 ```
+
+---
+
+### Subsystem 3 — Analytics Dashboard & AI Advisory Streaming Pipeline
+
+**Implemented by:** Usama Rasheed
+
+**Source Code:**
+`backend/app/analytics/subsystem3_homeassignment2.py`
+
+**Automated Tests:**
+`backend/tests/test_subsystem3_homeassignment2.py`
+
+**Interactive Demonstration:**
+`backend/demo_subsystem3_homeassignment2.py`
+
+#### Scenario Overview
+
+Subsystem 3 ingests high-frequency, operational carbon telemetry feeds across three critical enterprise activity streams:
+1. **Business Travel Flight Bookings (Scope 3):** Flight distance in kilometers, passenger volume, cabin travel tier, and radiative forcing flight categorization.
+2. **Data Center Server Utility Logs (Scope 2):** Server electrical energy in kWh, Power Usage Effectiveness (PUE), server load ratio, and regional grid intensity factors.
+3. **Freight Logistics Payloads (Scope 1 & Scope 3):** Heavy freight cargo weight in tons, transit distance, and multimodal transport logistics (road, rail, sea, air freight).
+
+The streaming pipeline filters operational activity records by GHG Protocol scope tags (`Scope 1`, `Scope 2`, `Scope 3`) and transforms real-time metrics into **metric tons of $\text{CO}_2\text{e}$** ($\text{tCO}_2\text{e}$).
+
+#### Implemented Classes
+
+| Class | Responsibility | OOP Concept |
+|---|---|---|
+| `StreamProcessor` | Abstract root interface contract defining `process()` and pipeline composition. | Abstract Base Class (ABC) |
+| `ScopeFilter` | Filters streaming telemetry events by GHG emission scope (`Scope 1`, `Scope 2`, `Scope 3`). | Inheritance & Polymorphism |
+| `FlightTelemetryProcessor` | Transforms corporate flight bookings into metric tons of CO2e based on distance, cabin class, and pkm factors. | Inheritance & Polymorphism |
+| `DataCenterTelemetryProcessor` | Transforms server utility and compute logs into metric tons of CO2e considering PUE and grid intensity. | Inheritance & Polymorphism |
+| `FreightTelemetryProcessor` | Transforms freight shipping payloads into metric tons of CO2e using modal tonne-kilometer factors. | Inheritance & Polymorphism |
+| `ProcessingPipeline` | Sequentially chains and executes stream processors using operator composition and lazy generators. | Operator Overloading (`\|`, `+`) & Generators (`yield`) |
+| `TelemetryStream` | Iterates over incoming telemetry events one by one. | Iterators (`__iter__`, `__next__`) |
+
+#### UML Class Diagram — Subsystem 3
+
+```mermaid
+classDiagram
+    direction TB
+
+    class StreamProcessor {
+        <<abstract>>
+        +process(event: dict) dict | None*
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +__add__(other: StreamProcessor) ProcessingPipeline
+        +run(stream) Generator
+    }
+
+    class ScopeFilter {
+        +VALID_SCOPES: set
+        -_allowed_scopes: set
+        +__init__(allowed_scopes: set)
+        +get_allowed_scopes() set
+        +process(event: dict) dict | None
+    }
+
+    class FlightTelemetryProcessor {
+        +BASE_FACTORS: dict
+        +CABIN_MULTIPLIERS: dict
+        +process(event: dict) dict
+    }
+
+    class DataCenterTelemetryProcessor {
+        +DEFAULT_GRID_FACTOR: Decimal
+        +DEFAULT_PUE: Decimal
+        +process(event: dict) dict
+    }
+
+    class FreightTelemetryProcessor {
+        +MODE_FACTORS: dict
+        +process(event: dict) dict
+    }
+
+    class ProcessingPipeline {
+        -_processors: list
+        +__init__(processors: list)
+        +get_processors() list
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +__add__(other: StreamProcessor) ProcessingPipeline
+        +process(event: dict) dict | None
+        +run(stream) Generator
+    }
+
+    class TelemetryStream {
+        -_events: Iterator
+        +__init__(events)
+        +__iter__() TelemetryStream
+        +__next__() dict
+    }
+
+    StreamProcessor <|-- ScopeFilter
+    StreamProcessor <|-- FlightTelemetryProcessor
+    StreamProcessor <|-- DataCenterTelemetryProcessor
+    StreamProcessor <|-- FreightTelemetryProcessor
+    StreamProcessor <|-- ProcessingPipeline
+
+    ProcessingPipeline "1" *-- "1..*" StreamProcessor : composes
+    ProcessingPipeline ..> TelemetryStream : consumes
+```
+
+#### Mapping to Required OOP Concepts
+
+1. **Abstract Base Classes (ABCs):**
+   `StreamProcessor` inherits from Python's `abc.ABC` and defines the abstract contract `@abstractmethod def process(self, event: dict) -> dict | None`.
+2. **Inheritance & Polymorphism:**
+   `ScopeFilter`, `FlightTelemetryProcessor`, `DataCenterTelemetryProcessor`, `FreightTelemetryProcessor`, and `ProcessingPipeline` inherit from `StreamProcessor` and polymorphically implement `process()` to transform distinct telemetry schemas.
+3. **Operator Overloading:**
+   `StreamProcessor` and `ProcessingPipeline` implement both `__or__()` (`|`) and `__add__()` (`+`), enabling expressive, declarative pipeline composition:
+   ```python
+   pipeline = scope_filter | flight_processor | datacenter_processor + freight_processor
+   ```
+4. **Iterators & Generators:**
+   `TelemetryStream` implements the standard iterator protocol with `__iter__()` and `__next__()`. `ProcessingPipeline.run()` lazily processes telemetry events using a generator with `yield`.
+
+#### Processing Example
+
+```python
+pipeline = (
+    ScopeFilter({"Scope 2", "Scope 3"})
+    | FlightTelemetryProcessor()
+    | DataCenterTelemetryProcessor()
+)
+
+stream = TelemetryStream(telemetry_events)
+for record in pipeline.run(stream):
+    print(f"{record['telemetry_type'].upper()}: {record['co2e_tons']:.6f} tCO2e")
+```
+
+#### Run Automated Tests
+
+From the `backend` directory:
+
+```bash
+# Run Subsystem 2 tests
+python -m pytest tests/test_subsystem2_homeassignment2.py -v
+
+# Run Subsystem 3 tests
+python -m pytest tests/test_subsystem3_homeassignment2.py -v
+
+# Run all Hometask 2 tests
+python -m pytest tests/test_subsystem2_homeassignment2.py tests/test_subsystem3_homeassignment2.py -v
+```
+
+#### Run Interactive Demonstration
+
+```bash
+cd backend
+python demo_subsystem3_homeassignment2.py
+```
+
 
 ### Team Video Presentation
 
