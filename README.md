@@ -143,11 +143,13 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 
 ### Team Overview
 
+
 | Team member | Assigned subsystem | Implementation |
 |---|---|---|
-| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes, UML and unit tests](docs/Hometask1-Subsystem2.md) |
+| Xiangping Kong | Subsystem 1 — Authentication & Enterprise Management | [Three OOP classes (User, Enterprise, Department), UML and unit tests](#subsystem-1--user-authentication--enterprise-management-oop-implementation) |
+| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes (ActivityRecord, EmissionFactor, CalculationService) and UML](#subsystem-2--carbon-activity-management--calculation-engine) |
 | Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
-| Other team members | Subsystems 1 & 4 | Add each member's subsystem and three classes before submission |
+
 
 ### System Design — UML Diagrams
 
@@ -334,6 +336,37 @@ This subsystem focuses on user account information, enterprise profiles, and dep
 
 **Implementation note:** These classes are implemented separately for Hometask 1. The existing FastAPI routes and application behavior remain unchanged.
 
+
+### Subsystem 2 — Carbon Activity Management & Calculation Engine (OOP Implementation)
+
+The Subsystem 2 OOP implementation is located in `backend/app/activities/oop.py`.
+
+This subsystem manages enterprise carbon activity records, validates activity measurements, and calculates greenhouse gas emissions using domain-specific emission factors. Three OOP classes have been implemented to represent the core entities and calculation logic of Subsystem 2.
+
+#### Three Implemented Classes
+
+| Class | Responsibility | Constructor | Encapsulation / Methods |
+|---|---|---|---|
+| `ActivityRecord` | Represents an enterprise carbon activity, including its category, activity type, measured amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | Uses protected-style attributes (`_category`, `_activity_type`, `_amount`, `_unit`, `_date`, `_enterprise_id`) with getter/setter methods. Validates required fields, positive finite amounts, and dates. Provides `get_period()` for monthly reporting. |
+| `EmissionFactor` | Encapsulates a domain-specific emission factor associated with an activity category, type, unit, and source. | `__init__(category, activity_type, factor, unit, source)` | Uses protected-style attributes and getter/setter methods to validate emission factor information. Provides `matches(activity)` to verify compatibility with an `ActivityRecord`. |
+| `CalculationService` | Coordinates emission calculations, manages emission factors, validates activity units, and calculates CO2e emissions using the configured factor catalog. | `__init__(factor_catalog=None)` | Encapsulates the factor catalog and its `EmissionFactor` objects. Provides `initialize_factors()`, `get_factor_catalog()`, `set_factor_catalog()`, `get_emission_factor()`, `validate_units()`, and `calculate()`. Uses Decimal arithmetic for reliable calculations. |
+
+#### Mapping to Capstone Subsystem 2 Architecture
+
+- **`ActivityRecord`:** Represents operational activity data managed through the Carbon Activity Management module, including electricity, heating, transport, and waste activities. It corresponds to the activity creation, editing, and history features of the Capstone.
+- **`EmissionFactor`:** Represents the emission factor configuration used to convert activity measurements into kilograms of CO2 equivalent. Factors are loaded from the existing emission factor catalog.
+- **`CalculationService`:** Implements the carbon calculation logic used by Subsystem 2. It validates activity units, selects the appropriate emission factor, and calculates emissions for enterprise activity records.
+
+#### OOP Concepts Applied
+
+- **Constructors:** All three classes implement `__init__()` to initialize their attributes and required dependencies.
+- **Encapsulation:** Attributes use a leading underscore, with getter and setter methods providing controlled access to object data.
+- **Data validation:** `ActivityRecord` validates activity measurements, while `EmissionFactor` validates emission factor values and required information.
+- **Composition:** `CalculationService` creates and owns its `EmissionFactor` objects. The UML relationship is `CalculationService "1" *-- "0..*" EmissionFactor`.
+- **Dependency:** `CalculationService` receives and processes `ActivityRecord` objects through its `calculate()` method without owning their lifecycle.
+- **Precision:** The calculation engine uses Python's `Decimal` and `ROUND_HALF_UP` to produce emissions rounded to two decimal places.
+
+**Implementation note:** The classes are implemented in the existing Subsystem 2 backend module and are aligned with its carbon activity calculation logic. The FastAPI endpoints and MongoDB repository remain separate from the OOP domain classes.
 
 ### Subsystem 3 — Analytics Dashboard & AI Advisory (OOP Implementation)
 
