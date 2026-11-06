@@ -496,15 +496,78 @@ The backend routes are intentionally thin and delegate persistence to the databa
 - HTTP mapping in `backend/app/activities/router.py`: invalid activity data yields **422 Unprocessable Entity** and missing activities yield **404 Not Found**.
 - Test module: `backend/tests/test_subsystem2_exceptions.py`. **15 pytest test cases** (13 test functions, including 3 parameterized invalid amounts), covering exception inheritance, invalid input and unit handling, missing factors, valid calculation, HTTP error mapping, activity creation, and enterprise data isolation.
 
+### Subsystem 3 — Analytics Dashboard & AI Advisory
+
+**Implemented by Usama Rasheed.**
+
+- Custom exception classes: `backend/app/analytics/exceptions.py`.
+  - `Subsystem3Error`: base application exception (subclass of `ValueError` to preserve compatibility with existing callers).
+  - `InvalidMetricError`: raised when emission metric amounts, percentages, categories, or activity counts fail domain validation.
+  - `InvalidDatePeriodError`: raised when period strings (e.g. malformed `YYYY-MM` format or month outside 01–12) or year filters (outside 2000–2100) are invalid.
+  - `AnalyticsAggregationError`: raised when aggregation pipelines fail, enterprise IDs are invalid/empty, or internal analytics states are corrupted.
+  - `InsufficientDataError`: raised when queries explicitly require existing activity telemetry but no matching records exist.
+  - `AIAdvisorError`: raised when AI advisory recommendation generation fails, unrecoverable synthesis errors occur, or advisor parameters are misconfigured.
+- Error handling in `backend/app/analytics/oop.py`, `backend/app/analytics/service.py`, and `backend/app/analytics/ai_advisor.py`:
+  - Domain validation in OOP setters (`EmissionMetric`, `AnalyticsEngine`, `SustainabilityAdvisor`) raises typed `Subsystem3Error` exceptions.
+  - Service layer validates period format, valid month ranges (01–12), year bounds, non-empty enterprise context, and wraps MongoDB aggregation failures.
+  - AI Advisor validates enterprise IDs, non-empty activity constraints, and configuration parameters.
+- HTTP mapping in `backend/app/analytics/router.py` and `backend/app/analytics/ai_router.py`:
+  - **400 Bad Request**: `InvalidMetricError`, `InvalidDatePeriodError`, and uncaught `Subsystem3Error`.
+  - **404 Not Found**: `InsufficientDataError`.
+  - **500 Internal Server Error**: `AnalyticsAggregationError`, `AIAdvisorError`.
+- Test module: `backend/tests/test_subsystem3_exceptions.py`. **44 pytest test cases**, covering exception inheritance from `ValueError`, error message preservation, OOP domain validation, date/period/year boundary validation, aggregation failure wrapping, enterprise data isolation, and API HTTP error mappings.
+
+```mermaid
+classDiagram
+    class ValueError {
+        <<Python Standard Library>>
+    }
+    class Subsystem3Error {
+        <<Base Exception>>
+    }
+    class InvalidMetricError {
+        +negative or non-finite CO2e
+        +out-of-range percentage
+        +invalid category
+        +invalid activity count
+    }
+    class InvalidDatePeriodError {
+        +malformed YYYY-MM
+        +month outside 01-12
+        +year outside 2000-2100
+    }
+    class AnalyticsAggregationError {
+        +empty enterprise ID
+        +malformed metrics dict
+        +pipeline aggregation failure
+    }
+    class InsufficientDataError {
+        +zero activities when required
+        +missing telemetry for period
+    }
+    class AIAdvisorError {
+        +invalid advisor mode
+        +invalid recommendations config
+        +unrecoverable advisor failure
+    }
+
+    ValueError <|-- Subsystem3Error
+    Subsystem3Error <|-- InvalidMetricError
+    Subsystem3Error <|-- InvalidDatePeriodError
+    Subsystem3Error <|-- AnalyticsAggregationError
+    Subsystem3Error <|-- InsufficientDataError
+    Subsystem3Error <|-- AIAdvisorError
+```
+
 ### Run Hometask 4 Tests
 
 From the `backend/` directory, install development dependencies and run:
 
 ```bash
 python -m pip install -r requirements-dev.txt
-python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py -v
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py tests/test_subsystem3_exceptions.py -v
 ```
 
-The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
+The three Hometask 4 modules define **65 test cases** in total (6 for Subsystem 1, 15 for Subsystem 2, and 44 for Subsystem 3). The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
-**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
+**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 and 3 OOP and repository tests can also be run as regression checks.
