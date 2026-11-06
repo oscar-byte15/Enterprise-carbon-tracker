@@ -422,11 +422,6 @@ The Subsystem 3 OOP implementation is located in `backend/app/analytics/oop.py`.
 - **`AnalyticsEngine`:** Represents the domain aggregation engine powering `GET /analytics/summary` and monthly reporting trends in `backend/app/analytics/`.
 - **`SustainabilityAdvisor`:** Encapsulates the recommendation generation engine powering the AI Coach (`frontend/src/features/activities/pages/AICoach.jsx`) and `POST /ai/recommendations`.
 
-### Team Video Presentation (3–5 minutes)
-
-**Video link:** Pending team recording — replace this placeholder with the direct YouTube, Loom or Google Drive link before submission.
-
-All four team members should explain their own classes and how they correspond to their subsystem's UML architecture.
 
 ### Running Hometask 1 Tests
 
@@ -733,13 +728,6 @@ python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_excep
 
 The three Hometask 4 modules define **65 test cases** in total (6 for Subsystem 1, 15 for Subsystem 2, and 44 for Subsystem 3). The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
-### Team Video Presentation
-
-**Duration:** 5 minutes
-
-**Video Link:** Pending team recording.
-Replace this placeholder with the direct video link
-before submission.
 
 ## Hometask 3 — Web APIs & Database Access Layers
 
