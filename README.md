@@ -456,6 +456,18 @@ The backend routes are intentionally thin and delegate persistence to the databa
 
 **Implemented by Oscar Daniel de la Cruz Jara.**
 
+
+#### Three Implemented Classes
+
+The existing OOP classes in `backend/app/activities/oop.py` now use Subsystem 2's custom exception hierarchy to handle invalid input and emission factor errors.
+
+| **Class** | **Responsibility** | **Constructor** | **Encapsulation / Methods** |
+| --------- | ------------------ | --------------- | --------------------------- |
+| `ActivityRecord` | Stores an enterprise carbon activity, including category, type, amount, unit, date, and enterprise ID. | `__init__(category, activity_type, amount, unit, activity_date, enterprise_id)` | Uses private-style attributes with validated getters and setters. Invalid amounts and required fields raise `InvalidActivityError`; `get_period()` derives the reporting month. |
+| `EmissionFactor` | Represents the configured factor used to convert an activity amount into CO2e emissions. | `__init__(category, activity_type, factor, unit, source)` | Uses getters and validated setters. Invalid factor values raise `InvalidActivityError`; `matches(activity)` verifies compatible category, type, and unit. |
+| `CalculationService` | Loads emission factors, validates activity units, and calculates rounded CO2e emissions. | `__init__(factor_catalog=None)` | Provides `initialize_factors()`, `get_factor_catalog()`, `set_factor_catalog()`, `get_emission_factor()`, `validate_units()`, and `calculate()`. Raises `EmissionFactorNotFoundError` for unknown factors and `InvalidActivityError` for incompatible units. |
+
+
 - Custom exception classes: `backend/app/activities/exceptions.py`.
   - `Subsystem2Error`: base application exception (subclass of `ValueError` to preserve compatibility).
   - `InvalidActivityError`: missing or invalid fields, non-positive/non-finite amounts or factors, and mismatched units.
