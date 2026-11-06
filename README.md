@@ -145,9 +145,9 @@ This assignment translates the team's Capstone subsystem architecture into Pytho
 
 | Team member | Assigned subsystem | Implementation |
 |---|---|---|
-| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes, UML and unit tests](docs/Hometask1-Subsystem2.md) |
+| Xiangping Kong | Subsystem 1 — Authentication & Enterprise Management | [Three OOP classes (User, Enterprise, Department), UML and unit tests](#subsystem-1--user-authentication--enterprise-management-oop-implementation) |
+| Oscar Daniel de la Cruz Jara | Subsystem 2 — Carbon Activity Management & Calculation Engine | [Three OOP classes (ActivityRecord, EmissionFactor, CalculationService) and UML](#subsystem-2--carbon-activity-management--calculation-engine) |
 | Usama Rasheed | Subsystem 3 — Analytics Dashboard & AI Advisory | [Three OOP classes (EmissionMetric, AnalyticsEngine, SustainabilityAdvisor), UML and unit tests](#subsystem-3--analytics-dashboard--ai-advisory-oop-implementation) |
-| Other team members | Subsystems 1 & 4 | Add each member's subsystem and three classes before submission |
 
 ### System Design — UML Diagrams
 
@@ -400,117 +400,6 @@ python -m pytest tests/test_oop_subsystem3.py -v
 # Run all Hometask 1 tests together
 python -m pytest tests/test_oop_hometask1.py tests/test_oop_subsystem3.py -v
 ```
-
-## Hometask 3 — Web APIs & Database Access Layers
-
-This assignment documents the current FastAPI + MongoDB implementation of the Enterprise Carbon Tracker. The project is structured as a full-stack application: a React frontend in `frontend/` consumes the backend API, the FastAPI backend in `backend/app/` exposes the business logic, and MongoDB persists tenant and activity data in the database layer.
-
-### Project architecture
-
-- **Frontend:** `frontend/` contains the React + Vite app for authentication, activity capture, analytics, and enterprise profile screens.
-- **Backend:** `backend/app/` contains FastAPI routers, validation schemas, calculation logic, analytics services, and MongoDB access objects.
-- **Database:** MongoDB is used for persistent storage of users, enterprises, departments, and carbon activity records. The app connects through `pymongo` using the configured `MONGODB_URI` and `MONGODB_DB` values in `backend/app/config.py`.
-
-### Implemented API endpoints
-
-The API is assembled in `backend/app/main.py` and includes the following authenticated and public routes.
-
-#### Subsystem 1 — Authentication & Enterprise Management
-
-`backend/app/routes.py` exposes the following endpoints:
-
-- `POST /login` — authenticate a user and return a JWT token
-- `POST /register` — create an enterprise and its admin user
-- `GET /profile` — return the current enterprise profile
-- `PUT /profile` — update the current enterprise profile
-- `GET /departments` — list departments for the current enterprise
-- `POST /departments` — create a department for the current enterprise
-
-#### Subsystem 2 — Carbon Activity Management & Calculation Engine
-
-`backend/app/activities/router.py` registers the `"/activities"` router and implements:
-
-- `POST /activities/` — create an activity, validate inputs, calculate CO2e, and save the record
-- `GET /activities/` — list all activities for the authenticated enterprise
-- `GET /activities/{activity_id}` — fetch one activity by ID for the authenticated enterprise
-- `PUT /activities/{activity_id}` — update an activity owned by the enterprise
-- `DELETE /activities/{activity_id}` — delete an activity owned by the enterprise
-
-#### Subsystem 3 — Analytics Dashboard & AI Advisory
-
-`backend/app/analytics/router.py` exposes:
-
-- `GET /analytics/summary` — aggregate enterprise emissions by category and period
-- `GET /analytics/trends` — return monthly trend data for the enterprise
-
-`backend/app/analytics/ai_router.py` exposes:
-
-- `POST /ai/recommendations` — generate reduction recommendations for the authenticated enterprise
-
-#### Service health
-
-- `GET /health` — returns application health status
-
-### MongoDB persistence implementation
-
-The database access layer is implemented with MongoDB-backed service objects rather than an in-memory store.
-
-- `backend/app/mongo_store.py` defines `MongoStore`, which connects to MongoDB and manages the `users`, `enterprises`, and `departments` collections.
-- The constructor creates unique indexes for `email`, `enterprise_id`, and `department_id` and adds an `enterprise_id` index for department queries.
-- `create_enterprise()`, `get_user_by_email()`, `get_enterprise()`, `update_enterprise()`, `list_departments()`, and `create_department()` are the persistence methods used by Subsystem 1 routes.
-- `backend/app/store.py` imports and instantiates `MongoStore` as `store`, which is the object used by the authentication and enterprise API layer.
-- `backend/app/activities/mongo_repository.py` defines `MongoActivityRepository`, which manages the `activity_records` collection and supports create, list, fetch-by-id, update, and delete operations keyed by `enterprise_id` and `id`.
-- The repository creates unique and filtered indexes to support enterprise-scoped queries and chronological retrieval of activity data.
-
-### How the API routes interact with the database layer
-
-The backend routes are intentionally thin and delegate persistence to the database access objects:
-
-- Subsystem 1 routes in `backend/app/routes.py` call `store.get_user_by_email()`, `store.create_enterprise()`, `store.get_enterprise()`, `store.update_enterprise()`, `store.list_departments()`, and `store.create_department()`.
-- Subsystem 2 routes in `backend/app/activities/router.py` validate and calculate the activity payload, then pass the result to `activity_repository.create()`, `get_all()`, `get_by_id()`, `update()`, and `delete()`.
-- Subsystem 3 analytics routes do not bypass the repository layer: `backend/app/analytics/service.py` uses `activity_repository.collection.aggregate(...)` to calculate summaries and trends, while the AI advisor also reads enterprise data via `store.get_enterprise()`.
-
----
-
-## Hometask 4 — Error Handling & Automated Testing
-
-**Submission branch:** `HomeworkAssignment4`. Python backend: **FastAPI + MongoDB**. Automated testing: **pytest + mongomock**.
-
-### Subsystem 1 — Authentication & Enterprise Management
-
-- Custom exception classes: `backend/app/exceptions.py` — `Subsystem1Error`, `EmailAlreadyRegisteredError`, `EnterpriseNotFoundError`.
-- HTTP errors: `backend/app/routes.py` maps duplicate registrations to **409 Conflict** and missing enterprises to **404 Not Found**.
-- Tests: `backend/tests/test_subsystem1_exceptions.py` — **6 tests**.
-
-### Subsystem 2 — Carbon Activity Management & Calculation Engine
-
-**Implemented by Oscar Daniel de la Cruz Jara.**
-
-
-- Custom exception classes: `backend/app/activities/exceptions.py`.
-  - `Subsystem2Error`: base application exception (subclass of `ValueError` to preserve compatibility).
-  - `InvalidActivityError`: missing or invalid fields, non-positive/non-finite amounts or factors, and mismatched units.
-  - `EmissionFactorNotFoundError`: unknown emission categories or activity types.
-  - `ActivityNotFoundError`: a record does not exist (or is not accessible to the requesting enterprise).
-- Error handling in `backend/app/activities/oop.py`: validation and factor lookup raise specific domain exceptions, retaining their prior messages.
-- HTTP mapping in `backend/app/activities/router.py`: invalid activity data yields **422 Unprocessable Entity** and missing activities yield **404 Not Found**.
-- Test module: `backend/tests/test_subsystem2_exceptions.py`. **15 pytest test cases** (13 test functions, including 3 parameterized invalid amounts), covering exception inheritance, invalid input and unit handling, missing factors, valid calculation, HTTP error mapping, activity creation, and enterprise data isolation.
-
-### Run Hometask 4 Tests
-
-From the `backend/` directory, install development dependencies and run:
-
-```bash
-python -m pip install -r requirements-dev.txt
-python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py -v
-```
-
-The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
-
-**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
-
-
----
 
 ## Hometask 2 — Real-Time Data Processing
 
@@ -868,3 +757,114 @@ python demo_subsystem3_homeassignment2.py
 **Video Link:** Pending team recording.
 Replace this placeholder with the direct video link
 before submission.
+
+## Hometask 3 — Web APIs & Database Access Layers
+
+This assignment documents the current FastAPI + MongoDB implementation of the Enterprise Carbon Tracker. The project is structured as a full-stack application: a React frontend in `frontend/` consumes the backend API, the FastAPI backend in `backend/app/` exposes the business logic, and MongoDB persists tenant and activity data in the database layer.
+
+### Project architecture
+
+- **Frontend:** `frontend/` contains the React + Vite app for authentication, activity capture, analytics, and enterprise profile screens.
+- **Backend:** `backend/app/` contains FastAPI routers, validation schemas, calculation logic, analytics services, and MongoDB access objects.
+- **Database:** MongoDB is used for persistent storage of users, enterprises, departments, and carbon activity records. The app connects through `pymongo` using the configured `MONGODB_URI` and `MONGODB_DB` values in `backend/app/config.py`.
+
+### Implemented API endpoints
+
+The API is assembled in `backend/app/main.py` and includes the following authenticated and public routes.
+
+#### Subsystem 1 — Authentication & Enterprise Management
+
+`backend/app/routes.py` exposes the following endpoints:
+
+- `POST /login` — authenticate a user and return a JWT token
+- `POST /register` — create an enterprise and its admin user
+- `GET /profile` — return the current enterprise profile
+- `PUT /profile` — update the current enterprise profile
+- `GET /departments` — list departments for the current enterprise
+- `POST /departments` — create a department for the current enterprise
+
+#### Subsystem 2 — Carbon Activity Management & Calculation Engine
+
+`backend/app/activities/router.py` registers the `"/activities"` router and implements:
+
+- `POST /activities/` — create an activity, validate inputs, calculate CO2e, and save the record
+- `GET /activities/` — list all activities for the authenticated enterprise
+- `GET /activities/{activity_id}` — fetch one activity by ID for the authenticated enterprise
+- `PUT /activities/{activity_id}` — update an activity owned by the enterprise
+- `DELETE /activities/{activity_id}` — delete an activity owned by the enterprise
+
+#### Subsystem 3 — Analytics Dashboard & AI Advisory
+
+`backend/app/analytics/router.py` exposes:
+
+- `GET /analytics/summary` — aggregate enterprise emissions by category and period
+- `GET /analytics/trends` — return monthly trend data for the enterprise
+
+`backend/app/analytics/ai_router.py` exposes:
+
+- `POST /ai/recommendations` — generate reduction recommendations for the authenticated enterprise
+
+#### Service health
+
+- `GET /health` — returns application health status
+
+### MongoDB persistence implementation
+
+The database access layer is implemented with MongoDB-backed service objects rather than an in-memory store.
+
+- `backend/app/mongo_store.py` defines `MongoStore`, which connects to MongoDB and manages the `users`, `enterprises`, and `departments` collections.
+- The constructor creates unique indexes for `email`, `enterprise_id`, and `department_id` and adds an `enterprise_id` index for department queries.
+- `create_enterprise()`, `get_user_by_email()`, `get_enterprise()`, `update_enterprise()`, `list_departments()`, and `create_department()` are the persistence methods used by Subsystem 1 routes.
+- `backend/app/store.py` imports and instantiates `MongoStore` as `store`, which is the object used by the authentication and enterprise API layer.
+- `backend/app/activities/mongo_repository.py` defines `MongoActivityRepository`, which manages the `activity_records` collection and supports create, list, fetch-by-id, update, and delete operations keyed by `enterprise_id` and `id`.
+- The repository creates unique and filtered indexes to support enterprise-scoped queries and chronological retrieval of activity data.
+
+### How the API routes interact with the database layer
+
+The backend routes are intentionally thin and delegate persistence to the database access objects:
+
+- Subsystem 1 routes in `backend/app/routes.py` call `store.get_user_by_email()`, `store.create_enterprise()`, `store.get_enterprise()`, `store.update_enterprise()`, `store.list_departments()`, and `store.create_department()`.
+- Subsystem 2 routes in `backend/app/activities/router.py` validate and calculate the activity payload, then pass the result to `activity_repository.create()`, `get_all()`, `get_by_id()`, `update()`, and `delete()`.
+- Subsystem 3 analytics routes do not bypass the repository layer: `backend/app/analytics/service.py` uses `activity_repository.collection.aggregate(...)` to calculate summaries and trends, while the AI advisor also reads enterprise data via `store.get_enterprise()`.
+
+---
+
+## Hometask 4 — Error Handling & Automated Testing
+
+**Submission branch:** `HomeworkAssignment4`. Python backend: **FastAPI + MongoDB**. Automated testing: **pytest + mongomock**.
+
+### Subsystem 1 — Authentication & Enterprise Management
+
+- Custom exception classes: `backend/app/exceptions.py` — `Subsystem1Error`, `EmailAlreadyRegisteredError`, `EnterpriseNotFoundError`.
+- HTTP errors: `backend/app/routes.py` maps duplicate registrations to **409 Conflict** and missing enterprises to **404 Not Found**.
+- Tests: `backend/tests/test_subsystem1_exceptions.py` — **6 tests**.
+
+### Subsystem 2 — Carbon Activity Management & Calculation Engine
+
+**Implemented by Oscar Daniel de la Cruz Jara.**
+
+
+- Custom exception classes: `backend/app/activities/exceptions.py`.
+  - `Subsystem2Error`: base application exception (subclass of `ValueError` to preserve compatibility).
+  - `InvalidActivityError`: missing or invalid fields, non-positive/non-finite amounts or factors, and mismatched units.
+  - `EmissionFactorNotFoundError`: unknown emission categories or activity types.
+  - `ActivityNotFoundError`: a record does not exist (or is not accessible to the requesting enterprise).
+- Error handling in `backend/app/activities/oop.py`: validation and factor lookup raise specific domain exceptions, retaining their prior messages.
+- HTTP mapping in `backend/app/activities/router.py`: invalid activity data yields **422 Unprocessable Entity** and missing activities yield **404 Not Found**.
+- Test module: `backend/tests/test_subsystem2_exceptions.py`. **15 pytest test cases** (13 test functions, including 3 parameterized invalid amounts), covering exception inheritance, invalid input and unit handling, missing factors, valid calculation, HTTP error mapping, activity creation, and enterprise data isolation.
+
+### Run Hometask 4 Tests
+
+From the `backend/` directory, install development dependencies and run:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_exceptions.py -v
+```
+
+The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
+
+**Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
+
+
+---
