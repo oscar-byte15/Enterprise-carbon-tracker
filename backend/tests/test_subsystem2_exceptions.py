@@ -17,12 +17,12 @@ from app.activities.exceptions import (
     ActivityNotFoundError,
 )
 from app.activities.oop import ActivityRecord, CalculationService, EmissionFactor
-from app.activities.mongo_repository import MongoActivityRepository
 from app.activities.schemas import ActivityCreate
 
 # The router imports database-backed dependencies at module load time.
 # Mock the MongoDB client before importing it to avoid a live connection.
 with patch("pymongo.MongoClient", return_value=mongomock.MongoClient()):
+    from app.activities.mongo_repository import MongoActivityRepository
     from app.activities import router as activity_routes
 
 
