@@ -5,9 +5,12 @@
 
 ## 🎥 Project Video Presentation
 
-**[▶ Watch Our Team Presentation on Google Drive](https://drive.google.com/file/d/1KW9YBkFFk_YKnRE3nSJbLDVhMkl2JuRP/view)**
+**[▶ Hometask 1 – Object-Oriented Programming (OOP)](https://drive.google.com/file/d/1KW9YBkFFk_YKnRE3nSJbLDVhMkl2JuRP/view)**
+This video presents the OOP design in our Enterprise Carbon Footprint Tracker & AI Assistant project, including the implementation and architecture of its three subsystems.
 
-The video presents our Enterprise Carbon Footprint Tracker & AI Assistant project, including the implementation and architecture of its three subsystems.
+**▶ [Hometask 3 – Web APIs & Database Access Layers](https://drive.google.com/file/d/1xFejjy9W8Rf-03NgcsOqctBE6gSU-yPN/view?usp=drive_link)**
+This video demonstrates our FastAPI endpoints, MongoDB integration, and database access layer implementation.
+
 ## Running the Project with Docker Compose
 
 This project supports Docker Compose to simplify the setup and execution of the Enterprise Carbon Tracker application.
