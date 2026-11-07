@@ -457,6 +457,117 @@ GHG emission scope (Scope 1, Scope 2, and Scope 3) and
 transforms valid activity measurements into metric tons
 of CO2 equivalent (CO2e).
 
+### Subsystem 1 — Authentication & Enterprise Management (Streaming Event Processing)
+
+**Implemented by:** Xiangping Kong
+
+**Source Code:**
+`backend/app/subsystem1_homeassignment2.py`
+
+**Automated Tests:**
+`backend/tests/test_subsystem1_homeassignment2.py`
+
+#### Implemented Classes
+
+| Class | Responsibility | OOP Concept |
+|---|---|---|
+| `StreamProcessor` | Defines the abstract processing contract for all enterprise event processors. | Abstract Base Class |
+| `EventTypeFilter` | Keeps only matching enterprise events such as `user_registration`, `enterprise_update`, and `department_created`. | Inheritance & Polymorphism |
+| `EnterpriseEventTransformer` | Normalizes raw event data and adds a readable audit summary for registration and department actions. | Inheritance & Polymorphism |
+| `ProcessingPipeline` | Executes processors in order and composes them using the `|` operator. | Operator Overloading & Generators |
+| `EventStream` | Iterates through event dictionaries one at a time using `__iter__()` and `__next__()`. | Iterators |
+
+#### OOP Concepts Applied
+
+- **Abstract Base Class:** `StreamProcessor` inherits from `ABC` and declares `process()` using `@abstractmethod`.
+- **Inheritance and Polymorphism:** `EventTypeFilter`, `EnterpriseEventTransformer`, and `ProcessingPipeline` all derive from `StreamProcessor` and provide different `process()` behavior.
+- **Operator Overloading:** `StreamProcessor.__or__()` creates a `ProcessingPipeline`, allowing `filter | transformer` composition.
+- **Iterator:** `EventStream` implements `__iter__()` and `__next__()` to stream records one event at a time.
+- **Generator:** `StreamProcessor.run()` uses `yield` to lazily process events without loading the whole input into memory.
+
+#### UML Class Diagram — Subsystem 1
+
+```mermaid
+classDiagram
+    class StreamProcessor {
+        <<abstract>>
+        +process(event: dict) dict | None
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +run(stream) Iterator[dict]
+    }
+
+    class EventTypeFilter {
+        +VALID_TYPES: ClassVar[set[str]]
+        -_allowed_types: set
+        +__init__(allowed_types)
+        +process(event: dict) dict | None
+    }
+
+    class EnterpriseEventTransformer {
+        +process(event: dict) dict
+    }
+
+    class ProcessingPipeline {
+        -_processors: list
+        +__init__(processors: list)
+        +get_processors() list
+        +__or__(other: StreamProcessor) ProcessingPipeline
+        +process(event: dict) dict | None
+    }
+
+    class EventStream {
+        -_events: Iterator
+        +__init__(events)
+        +__iter__() EventStream
+        +__next__() dict
+    }
+
+    StreamProcessor <|-- EventTypeFilter
+    StreamProcessor <|-- EnterpriseEventTransformer
+    StreamProcessor <|-- ProcessingPipeline
+    ProcessingPipeline "1" *-- "1..*" StreamProcessor : composes
+    EventStream ..> EventTypeFilter : iterates records
+```
+
+#### Working Example
+
+```python
+from app.subsystem1_homeassignment2 import (
+    EventStream,
+    EventTypeFilter,
+    EnterpriseEventTransformer,
+)
+
+pipeline = (
+    EventTypeFilter({"user_registration", "department_created"})
+    | EnterpriseEventTransformer()
+)
+
+events = EventStream([
+    {"event_type": "user_registration", "user_email": "alice@example.com", "enterprise_id": "ent-001"},
+    {"event_type": "department_created", "department_name": "Engineering", "enterprise_id": "ent-001"},
+])
+
+for event in pipeline.run(events):
+    print(event["audit_summary"])
+```
+
+Example output:
+
+```text
+User alice@example.com registered for enterprise ent-001.
+Department Engineering was created.
+```
+
+#### Run Automated Tests
+
+From the `backend` directory:
+
+```bash
+python -m pytest tests/test_subsystem1_homeassignment2.py -v
+```
+
+
 ### Subsystem 2 — Carbon Activity Streaming Pipeline
 
 **Implemented by:** Oscar Daniel de la Cruz Jara
@@ -836,6 +947,5 @@ python -m pytest tests/test_subsystem1_exceptions.py tests/test_subsystem2_excep
 The two Hometask 4 modules define **21 test cases** in total (6 for Subsystem 1 and 15 for Subsystem 2). These are defined cases, not a claim of a verified passing run. The tests use MongoMock and mocked persistence methods to avoid modifying production data.
 
 **Team completion note:** Each remaining subsystem should add its own custom error-handling class, integrate it into the application, and contribute tests as required by the instructor. Existing Subsystem 2 OOP and repository tests can also be run as regression checks.
-
 
 ---
