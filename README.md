@@ -5,7 +5,7 @@
 
 ## 🎥 Project Video Presentation
 
-**[▶ Watch Our Team Presentation on Google Drive](https://drive.google.com/file/d/1KW9YBkFFk_YKnRE3nSJbLDVhMkl2JuRP/view)**
+**[▶ Watch Our Team Presentation on Google Drive](https://drive.google.com/file/d/1KX4yHy0B1xV15HE8Xd4h6bKlYKC7rLgy/view?usp=drive_link)**
 
 The video presents our Enterprise Carbon Footprint Tracker & AI Assistant project, including the implementation and architecture of its three subsystems.
 
