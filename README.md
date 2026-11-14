@@ -126,15 +126,28 @@ python -m pytest tests/ -v
 
 ### Verified Test Results
 
-| Test Module | Passed | Failed |
-|---|---:|---:|
-| Calculation Engine | 14 | 0 |
-| MongoDB Repository | 8 | 0 |
-| **Total** | **22** | **0** |
+The complete backend test suite was executed using pytest
+with MongoDB running in Docker.
 
-Last verified: October 31, 2026.
+| Metric | Result |
+|---|---:|
+| Tests passed | 192 |
+| Tests failed | 0 |
+| Warnings | 1 |
+| Execution time | 4.14s |
 
-These tests verify the configured emission calculations, repository CRUD operations, and enterprise data isolation at the repository level. They do not replace full API integration or end-to-end tests.
+**Last verified:** November 12, 2026.
+
+```text
+192 passed, 1 warning in 4.14s
+```
+
+The tests cover all three subsystems, including authentication,
+enterprise management, database persistence, carbon calculations,
+analytics, AI advisory, and exception handling.
+
+These tests do not replace full end-to-end tests.
+
 
 ### Adding New Tests
 
@@ -147,6 +160,50 @@ docker run --rm carbon-tracker-tests
 
 This ensures Docker runs the latest tests.
 ---
+
+## Subsystem 1 — Authentication & Enterprise Management
+
+**Owner:** Xiangping Kong
+
+### Implemented Functionality
+
+- User registration and login
+- JWT-based authentication
+- Enterprise-level data isolation
+- Enterprise profile retrieval and update
+- Department creation and retrieval
+
+### UML Class Diagram
+
+![Subsystem 1 UML Class Diagram](docs/subsystem1-uml.svg)
+
+### Technical Implementation
+
+| Component | Implementation |
+|---|---|
+| REST API | FastAPI |
+| Input validation | Pydantic |
+| Password security | bcrypt password hashing |
+| Authentication | JWT access tokens |
+| Authorization | FastAPI dependencies |
+| Data persistence | PyMongo and MongoDB |
+| Error handling | Custom exceptions and HTTP error responses |
+| Automated testing | pytest |
+
+### Test Results
+
+All 26 Subsystem 1 tests passed successfully:
+
+- 12 OOP tests
+- 8 MongoDB persistence tests
+- 6 exception handling tests
+
+
+## Subsystem 2 — Carbon Activity & Calculation Engine
+
+## Subsystem 3 — Analytics Dashboard & AI Advisory
+
+
 
 ## Hometask 1 — Object-Oriented Concepts
 
